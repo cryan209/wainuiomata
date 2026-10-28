@@ -34,3 +34,7 @@ With Python 3, numpy, rasterio, pyproj and shapely installed, run `python script
 ## Surface materials
 
 Procedural pixel textures cover grass, asphalt aggregate, jointed concrete, corrugated metal and four facade styles (weatherboard, brick, render, shopfront). Building paint and roof colours vary deterministically by building ID. Cool daylight, a blue sky and light distance fog replace the earlier warm cast. Appearance remains stylised; these are not photographs of the actual facades. Survey geometry assets are unchanged.
+
+## Day and night
+
+The stylised 24-hour cycle lasts 12 minutes of active play, starting at 16:30. Sunlight, sky, fog, ambient light, moonlight, stars and emissive window masks update continuously. Pausing the game or hiding its tab pauses the cycle. The time panel provides pause/resume, a manual slider (which pauses automatic time), and Dawn / Day / Dusk / Night presets. N skips to the next preset. Lighting depicts a fictional cycle, not date-specific solar ephemerides.
