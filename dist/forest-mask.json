@@ -1,0 +1,11 @@
+{
+  "width": 256,
+  "height": 256,
+  "minX": -3667.839056026656,
+  "minZ": -3669.063914200291,
+  "maxX": 3670.115659543546,
+  "maxZ": 3668.890801370144,
+  "source": "Appearance mask inferred from licensed 2025 aerial imagery; not a surveyed land-cover classification.",
+  "attribution": "Derived from Hutt City 2025 aerial photography, copyright NZ Aerial Surveys and Hutt City Council, CC BY 4.0.",
+  "licence": "CC BY 4.0"
+}

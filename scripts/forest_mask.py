@@ -1,0 +1,6 @@
+"""Derive a coarse woodland appearance mask from the existing licensed aerial mosaic."""
+import json,pathlib,numpy as np
+from PIL import Image,ImageFilter
+root=pathlib.Path(__file__).resolve().parents[1];image=Image.open(root/'dist/roof-aerial-wide-2025.jpg').convert('RGB');a=np.asarray(image,dtype=np.float32);r,g,b=a[:,:,0],a[:,:,1],a[:,:,2];woody=(g>r*.95)&(g>b*1.06)&((r+g+b)/3<135)&(g>25)
+# Aggregate photographic evidence over ~29m cells, then soften boundaries.
+mask=Image.fromarray((woody*255).astype('uint8')).resize((256,256),Image.Resampling.BOX).filter(ImageFilter.GaussianBlur(.55));v=np.asarray(mask,dtype=np.float32)/255;v=np.clip((v-.18)/.5,0,1);(root/'dist/forest-mask.bin').write_bytes((v*255).astype('uint8').tobytes());meta=json.loads((root/'dist/roof-imagery-wide.json').read_text());(root/'dist/forest-mask.json').write_text(json.dumps({'width':256,'height':256,**{k:meta[k] for k in ['minX','minZ','maxX','maxZ']},'source':'Appearance mask inferred from licensed 2025 aerial imagery; not a surveyed land-cover classification.','attribution':'Derived from Hutt City 2025 aerial photography, copyright NZ Aerial Surveys and Hutt City Council, CC BY 4.0.','licence':'CC BY 4.0'},indent=2));print('Inferred woodland coverage:',round(float((v>.5).mean())*100,1),'percent of mosaic')
