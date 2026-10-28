@@ -1,0 +1,37 @@
+{
+  "originNZTM": [
+    1762931.1408190602,
+    5430336.934043825
+  ],
+  "originElevation": 90.849,
+  "verticalScale": 1,
+  "terrain": {
+    "size": 351,
+    "step": 20,
+    "minX": -3500,
+    "minZ": -3500
+  },
+  "fine": {
+    "width": 1001,
+    "height": 1101,
+    "step": 2,
+    "minX": -1000,
+    "minZ": -1100
+  },
+  "sources": {
+    "ground": "LINZ Hutt City LiDAR 1m DEM (2025), with Wellington LiDAR (2013\u20132014) and national 8m DEM filling regional survey gaps",
+    "roofs": "LINZ Hutt City LiDAR 1m DSM (2025), sampled within building outlines",
+    "footprints": "LINZ NZ Building Outlines \u2014 Hutt City aerial imagery (2021)",
+    "roads": "OpenStreetMap"
+  },
+  "counts": {
+    "buildings": 3208,
+    "roofTriangles": 255013,
+    "wallTriangles": 163042,
+    "minimumRoofCoverage": 1.0
+  },
+  "terrainElevationRange": [
+    -1.5,
+    577.88
+  ]
+}
