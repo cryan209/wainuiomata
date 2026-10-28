@@ -9,7 +9,7 @@ $('#play').disabled=true;$('#play').textContent='LOADING THE VALLEY…';
 let world;
 try{world=await loadWorld(scene)}catch(e){$('#play').textContent='COULD NOT LOAD — REFRESH TO RETRY';$('#toast').textContent=e.message;$('#toast').style.opacity=1;throw e}
 const {ground,roads,nearest,free}=world;const queen=roads.find(r=>r.name==='Queen Street');const start=queen.p[0].clone();
-const cycle=createDayNight({scene,renderer,camera,sky,sun,ambient,windowMaterials:world.windowMaterials});
+const cycle=createDayNight({scene,renderer,camera,sky,sun,ambient,windowMaterials:world.windowMaterials,photoMaterials:world.photoMaterials});
 $('#play').disabled=false;$('#play').textContent='EXPLORE WAINUIOMATA ↗';
 const markers=[];const names=['Queen Street','Wainuiomata Road','Fitzherbert Road','The Strand'];for(let i=0;i<names.length;i++){const r=roads.find(r=>r.name===names[i]);const p=r?r.p[Math.floor(r.p.length/2)].clone():start.clone().add(new T.Vector2((i-1)*100,-i*65));const m=new T.Mesh(new T.OctahedronGeometry(1.2),new T.MeshBasicMaterial({color:'#e4f49a',wireframe:true}));m.position.set(p.x,ground(p.x,p.y)+3,p.y);scene.add(m);markers.push({p,m,name:names[i],found:false})}
 const direction=queen.p[1].clone().sub(queen.p[0]);const initialYaw=Math.atan2(-direction.x,-direction.y);let aerial=false;let yaw=initialYaw,pitch=0,active=false,started=false,touch=false;const keys={};camera.position.set(start.x,ground(start.x,start.y)+2,start.y);camera.rotation.y=yaw;

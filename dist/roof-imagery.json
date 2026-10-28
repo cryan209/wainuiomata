@@ -1,0 +1,15 @@
+{
+  "image": "roof-aerial-2025.jpg",
+  "width": 4096,
+  "height": 4096,
+  "metresPerPixel": 0.5971642835598172,
+  "minX": -1223.0478388820775,
+  "maxZ": 1222.907509939745,
+  "maxX": 1222.9370665790047,
+  "minZ": -1223.0773955211043,
+  "source": "Hutt City 2025 aerial orthophotography",
+  "capture": "29 March 2025 (urban imagery, per service metadata)",
+  "service": "https://maps.huttcity.govt.nz/server02/rest/services/Aerials_2025/MapServer",
+  "licence": "CC BY 4.0",
+  "attribution": "\u00a9 NZ Aerial Surveys and Hutt City Council. Reused under CC BY 4.0. Cropped, resampled and mapped onto derived roof geometry."
+}
