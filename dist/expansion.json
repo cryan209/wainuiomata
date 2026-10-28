@@ -1,0 +1,19 @@
+{
+  "playableExtentMetres": 6400,
+  "bounds": {
+    "minX": -3200,
+    "maxX": 3200,
+    "minZ": -3200,
+    "maxZ": 3200
+  },
+  "roadWays": 2404,
+  "mappedBridgeWays": 63,
+  "waterwayWays": 65,
+  "additionalBuildingParts": 8514,
+  "traffic": {
+    "moving": 48,
+    "parked": 10
+  },
+  "bridgeDetail": "Inferred deck heights and generic rails/piers at mapped OSM bridge ways; not surveyed bridge engineering.",
+  "outerBuildingDetail": "Official outlines extruded to coarser LiDAR-derived heights; detailed centre meshes retained."
+}
