@@ -68,3 +68,11 @@ The procedural library now has 16 house fronts (weatherboard, vertical timber, b
 Building ID and ground-floor bay select the fictional facade consistently. Commercial-looking buildings in the town centre receive shop fronts at ground level; upper floors use residential fronts. Wall geometry is split by storey for texture assignment without changing its outline. Roof photographs and the measured terrain remain intact.
 
 Road materials distinguish fresh asphalt, weathered asphalt, coarse chipseal, heavy patching, utility repairs, gravel and pavers, based on mapped surface/type tags and a stable street-name seed. UVs follow the street's direction, with longitudinal tyre wear, cracks, repair seams and drain covers. Bridge, pedestrian and track surface rules are distinct. These are deliberately fictional visual treatments, not records of actual business tenants or pavement condition.
+
+## Greenery and the hill tunnel
+
+Procedural planting adds broadleaf trees, conifers, cabbage-tree-like crowns, low shrubs and flax-shaped plants. Street-tree placement is prioritised near the town centre; additional clusters populate the civic lawn, hills and riverbanks. Candidates are rejected near roads, buildings, water channels and tunnel entrances. Planting is decorative and does not claim to reproduce surveyed tree positions. Instanced geometry keeps the additional vegetation batched.
+
+The mapped Wainuiomata Tunnel (OSM way 357697360) is approximately 874m long and marked disused with no public access in the source data. The game uses its mapped alignment with a fictional explorable interior: arched lining, ribs, lighting, portals and an approach apron. The tunnel floor is inferred between source-ground elevations at the portals; dimensions and interior design are not surveyed. This is not a representation of present-day public access.
+
+Terrain and intersecting surface material fragments are clipped at the portals. Walking uses a separate underground floor and wall checks, and does not snap pedestrians on the hill road into the tunnel. Controls provides jumps to either portal. `node tests/tunnel.mjs` verifies subterranean movement, wall collision, exit, separation from the hill surface, and portal clipping, alongside the existing movement/bridge/traffic tests.
