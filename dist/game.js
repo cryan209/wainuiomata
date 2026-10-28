@@ -1,8 +1,9 @@
 import * as T from './vendor/three.js';
 import {loadWorld} from './geoworld.js';
-const $=s=>document.querySelector(s), scene=new T.Scene();scene.background=new T.Color('#bac1b0');scene.fog=new T.Fog('#bac1b0',450,6500);
-const renderer=new T.WebGLRenderer({antialias:false});renderer.setPixelRatio(1);renderer.outputColorSpace=T.SRGBColorSpace;$('#world').append(renderer.domElement);
-const camera=new T.PerspectiveCamera(68,innerWidth/innerHeight,.15,12000);camera.rotation.order='YXZ';const resize=()=>{renderer.setSize(Math.floor(innerWidth*.65),Math.floor(innerHeight*.65),false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};addEventListener('resize',resize);resize();scene.add(new T.HemisphereLight('#f7e5ca','#566650',2.5));const sun=new T.DirectionalLight('#ffdfac',1.6);sun.position.set(-180,230,100);scene.add(sun);
+import {addSky} from './textures.js';
+const $=s=>document.querySelector(s), scene=new T.Scene();scene.background=new T.Color('#92c8e9');scene.fog=new T.Fog('#c0dce8',800,6500);addSky(scene);
+const renderer=new T.WebGLRenderer({antialias:false});renderer.setPixelRatio(1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;$('#world').append(renderer.domElement);
+const camera=new T.PerspectiveCamera(68,innerWidth/innerHeight,.15,12000);camera.rotation.order='YXZ';const resize=()=>{renderer.setSize(Math.floor(innerWidth*.65),Math.floor(innerHeight*.65),false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};addEventListener('resize',resize);resize();scene.add(new T.HemisphereLight('#e2f1ff','#a5b5aa',1.85));const sun=new T.DirectionalLight('#fff9ee',2.1);sun.position.set(-180,230,100);scene.add(sun);
 $('#play').disabled=true;$('#play').textContent='LOADING THE VALLEY…';
 let world;
 try{world=await loadWorld(scene)}catch(e){$('#play').textContent='COULD NOT LOAD — REFRESH TO RETRY';$('#toast').textContent=e.message;$('#toast').style.opacity=1;throw e}
