@@ -60,3 +60,11 @@ Drone flight uses independent three-dimensional movement and bypasses building/w
 48 low-poly cars follow connected road nodes and keep left, choose routes at intersections, meet bridge deck heights, slow for cars and nearby pedestrians, and display lights at night. Ten additional parked cars populate the town-centre kerbs. They are ambient traffic, not driveable vehicles.
 
 Run `node tests/movement-network.mjs` for regression coverage of flight collision bypass, altitude, expanded bounds, landing, walking collision, bridge clearance / approach continuity, and traffic routing across a bridge. Rebuild scripts: `scripts/expand_map.py`, `scripts/expand_buildings.py`, `scripts/prepare_wide_imagery.py`.
+
+## Fictional facade and road variety
+
+The procedural library now has 16 house fronts (weatherboard, vertical timber, brick, roughcast, stucco, cottages and garages), 12 fictional shopfronts (dairy, bakery, fish and chips, cafe, books, hardware, market, laundrette, barber, florist, bikes and records), and seven road surfaces. Shop signs, awnings, posters, displays, doors, glazing, curtains and foundations are painted into small pixel textures. Matching emissive masks light the correct windows and shop signs at night.
+
+Building ID and ground-floor bay select the fictional facade consistently. Commercial-looking buildings in the town centre receive shop fronts at ground level; upper floors use residential fronts. Wall geometry is split by storey for texture assignment without changing its outline. Roof photographs and the measured terrain remain intact.
+
+Road materials distinguish fresh asphalt, weathered asphalt, coarse chipseal, heavy patching, utility repairs, gravel and pavers, based on mapped surface/type tags and a stable street-name seed. UVs follow the street's direction, with longitudinal tyre wear, cracks, repair seams and drain covers. Bridge, pedestrian and track surface rules are distinct. These are deliberately fictional visual treatments, not records of actual business tenants or pavement condition.
