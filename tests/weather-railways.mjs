@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {WEATHER,weatherVisibility} from '../dist/weather.js';
+import {railRoute} from '../dist/railways.js';
+assert.ok(weatherVisibility(WEATHER.rain)<weatherVisibility(WEATHER.clear));assert.ok(weatherVisibility(WEATHER.fog)<weatherVisibility(WEATHER.rain));for(const p of Object.values(WEATHER)){assert.ok(p.cloud>=0&&p.cloud<=1);assert.ok(weatherVisibility(p)>=650)}
+const line=railRoute([{x:0,z:0,h:10},{x:100,z:0,h:20}],10);assert.equal(line.sample(-20).position.x,0);assert.equal(line.sample(10000).position.x,100);const midpoint=line.sample(line.length/2);assert.ok(Math.abs(midpoint.position.x-50)<1e-8);assert.ok(Math.abs(midpoint.position.y-5)<1e-8);assert.ok(Math.abs(midpoint.direction.length()-1)<1e-8);assert.ok(Math.abs(line.nearest(50,7).distance-7)<1e-8);
+const data=JSON.parse(fs.readFileSync(new URL('../dist/railways.json',import.meta.url)));assert.equal(data.gauge,1.067);assert.ok(data.tracks.length>150);assert.ok(data.stations.some(s=>s.name==='Petone'));assert.ok(data.stations.some(s=>s.name==='Waterloo'));assert.ok(!data.stations.some(s=>s.name.includes('Bus Depot')));assert.ok(data.routes.length>=1);
+for(const route of data.routes){const path=railRoute(route.p);assert.ok(path.length>1000);for(let i=1;i<route.p.length;i++){const a=route.p[i-1],b=route.p[i],horizontal=Math.hypot(b.x-a.x,b.z-a.z);assert.ok(horizontal<10,'Mapped running path must not jump between disconnected track pieces');assert.ok(Math.abs(b.h-a.h)/Math.max(.01,horizontal)<.1,'Survey sampling steps must not pitch the train unrealistically')}for(const s of [0,path.length*.5,path.length])assert.ok(path.sample(s).position.toArray().every(Number.isFinite))}
+const commuter=railRoute(data.routes[0].p),waterloo=data.stations.find(s=>s.name==='Waterloo');assert.ok(commuter.nearest(waterloo.x,waterloo.z).distance<80,'The running train must pass the mapped Waterloo station');
+console.log('PASS: weather visibility presets, continuous rail sampling, NZ track gauge, connected commuter route, stations and smoothed train grades.');
