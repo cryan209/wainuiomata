@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {loadWorld} from './geoworld.js';
+import {loadWorld} from './geoworld.js?v=weather-rail-1';
 import {addSky} from './textures.js';
 import {createDayNight} from './day-night.js';
 import {createTraffic} from './traffic.js';
