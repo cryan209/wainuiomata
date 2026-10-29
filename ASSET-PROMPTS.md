@@ -1,5 +1,11 @@
 # Realistic foliage and facade assets
 
+## Side walls and canopy surfaces
+
+Saved as `dist/assets/building-surfaces-v1.png`. Generated with the built-in image generation tool, using the supplied Queen Street photograph as a material/style reference. Original fictional material samples.
+
+Use case: photorealistic-natural. Asset type: production game building-surface texture atlas, exactly 4 by 4 equal square cells with no gutters or labels. Primary request: photographic side-wall cladding and real canopy surfaces for modest New Zealand suburban buildings. The attached photograph is a STYLE AND MATERIAL REFERENCE only: its long flat shop verandah, painted corrugated cladding, weathered muted teal and yellow trim. Do not reproduce its business text or the scene. Each atlas cell is an orthographic, close-up flat MATERIAL SAMPLE filling the cell edge to edge, seamless-looking edges, soft neutral overcast illumination, realistic fine wear and grain; no perspective, no ambient scene, no windows, no doors, no shopfronts, no text, no logos, no people, no plants, no shadows cast by other objects. Row 1 cells: cream horizontal timber weatherboards; red-brown brick with grey mortar; muted blue horizontal weatherboards; light grey textured roughcast. Row 2: weathered warm vertical timber boards; off-white stucco; darker brown brick with mortar; pale grey horizontal weatherboards. Row 3: weathered light grey corrugated galvanized canopy roofing; muted teal painted corrugated metal; green and cream striped awning fabric; burgundy and cream striped awning fabric. Row 4: dark green painted timber soffit boards; off-white weathered timber soffit boards; pale beige concrete commercial side wall; muted grey vertically corrugated commercial wall. All surfaces detailed and photographic rather than drawn or rendered. Equal 4x4 grid, no dividers, no grid marks, no watermarks. Square high-resolution atlas.
+
 Generated with the built-in image generation tool. Original fictional art, not extracted GTA assets or photographs of actual Wainuiomata facades.
 
 ## Foliage atlas

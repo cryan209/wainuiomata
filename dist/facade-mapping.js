@@ -6,7 +6,7 @@ export function faceMapping(rings,x,z,flip=1){
   const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(length*length))),distance=Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);
   if(best&&best.distance<=distance)continue;
   const count=Math.max(1,Math.round(length/5.5)),width=length/count;
-  best={id,distance,count,u:p=>{const v=((p[0]-a[0])*dx+(p[2]-a[1])*dz)/length/width;return flip>0?v:count-v}};
+  best={id,distance,count,width,u:p=>{const v=((p[0]-a[0])*dx+(p[2]-a[1])*dz)/length/width;return flip>0?v:count-v}};
  }
  return best;
 }

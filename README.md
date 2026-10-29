@@ -84,3 +84,17 @@ A second, spatially batched canopy layer turns woodland slopes into continuous b
 ## Detailed foliage cards
 
 Broadleaf crowns and shrubs now use a transparent atlas with four original photographic foliage variants, carried on three crossed vertical cards and two canopy slices. Alpha testing preserves irregular leaf silhouettes and gaps without transparent sorting; canopy slices retain coverage from the drone. Shared materials, per-instance atlas selection, gentle wind, chunk culling and the existing near-distance trunk/undergrowth limits keep the dense woodland batched. Trunks, cabbage-tree fans and flax remain low-poly geometry. Planting positions remain inferred/decorative.
+
+## Building sides, verandas and protected open spaces
+
+Street-facing walls are selected from nearby mapped roads, including corner frontages. Side/rear faces use continuous photographic weatherboard, brick, timber, stucco, concrete or corrugated-metal cladding at material-specific scales. Sparse framed window overlays add glazing without a whole front-wall patch, door or sign. Original material art is saved in `dist/assets/building-surfaces-v1.png`; the supplied Queen Street photograph informed the fictional material and veranda style. Prompts and generation mode are recorded in ASSET-PROMPTS.md.
+
+Commercial street frontages receive flat or occasionally sloped verandas with textured tops and soffits, fascia trim and narrow support posts. A paved strip follows the ground under each veranda. Post collision leaves the covered walkway open. Frontage choice, canopy dimensions and window positions are inferred visual details, not surveyed architecture.
+
+`dist/open-spaces.json` extracts 158 mapped park-lawn interiors, grass areas, pitches and playgrounds from the retained OpenStreetMap dataset. Sports fields receive a clearance buffer; smaller urban parks retain an 8m edge band and mapped woodland areas. Both planting systems reject protected interiors, and woodland ground tint is suppressed on the lawns. Large wooded reserves are not blanket-cleared. Regenerate with `scripts/prepare_open_spaces.py` using the retained OSM cache. `tests/building-environment.mjs` checks real named park exclusions, frontage assignment, veranda collision and roof-tile slope/area continuity.
+
+## Streamed high-resolution roof photography
+
+Roof detail now comes from newly requested council aerial imagery sampled at 12.5cm/pixel in the detailed centre and 25cm/pixel in the surrounding valley, rather than enlarging the former 59.7cm and 238.9cm/pixel images. Spatial 256m tiles retain roof-footprint pixels plus a 3m imagery/parallax margin. Source imagery is © NZ Aerial Surveys / Hutt City Council (2025 urban); rural imagery is AAM NZ Ltd / Greater Wellington Regional Council (2021), CC BY 4.0, as documented by the council service.
+
+`dist/roof-detail.json` records the 309 georeferenced tiles. Measured roof triangles are clipped at texture-tile boundaries without changing their slopes or total surface area. Nearby detail textures load on demand with three concurrent requests and an 18-million-pixel resident selection budget (about 96MiB including RGBA mipmaps). Distant roofs, failed requests and tiles awaiting download retain the existing lower-resolution roof maps. Linear sampling and anisotropic filtering retain detail at oblique drone angles. Rebuild with `scripts/prepare_roof_detail.py`; downloaded source images are cached outside the project.

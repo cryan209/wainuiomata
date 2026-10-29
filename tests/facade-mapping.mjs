@@ -11,5 +11,5 @@ assert.ok(Math.abs(Math.abs(area)-4*7.3)<1e-8,'Texture cuts must preserve the or
 const seam=parts.filter(p=>p.floor===0);assert.equal(seam[0].uv([6,0,0])[0],1);assert.equal(seam[1].uv([6,0,0])[0],0);
 assert.equal(faceMapping([ring],6,0,-1).u([0,0,0]),2,'Reverse winding must keep the facade readable outside');
 assert.equal(facadeStyle({shop:true,style:3},42,0,4),31,'Upper floors must use window bays rather than shop signs or doors');
-assert.ok(facadeStyle({shop:true,style:3},42,0,0)>=16);assert.equal(FACADE_COUNT,44);
+assert.ok(facadeStyle({shop:true,style:3},42,0,0)>=16);assert.equal(FACADE_COUNT,62);
 console.log('PASS: corner-anchored facade bays, storey splits, continuous wall area, readable winding and upper-floor materials.');

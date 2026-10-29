@@ -1,4 +1,4 @@
-export const HOUSE_COUNT=16,SHOP_COUNT=12,FACADE_COUNT=HOUSE_COUNT+SHOP_COUNT+HOUSE_COUNT;
+export const HOUSE_COUNT=16,SHOP_COUNT=12,FACADE_COUNT=HOUSE_COUNT+SHOP_COUNT+HOUSE_COUNT+HOUSE_COUNT+2;
 export function hash(value){let n=Number(value)||0;for(const c of String(value))n=(Math.imul(n,31)+c.charCodeAt(0))|0;n^=n>>>16;return n>>>0}
 export function facadeProfile(building){const ring=building.rings[0];let twiceArea=0,x=0,z=0;for(let i=1;i<ring.length;i++)twiceArea+=ring[i-1][0]*ring[i][1]-ring[i][0]*ring[i-1][1];for(const p of ring){x+=p[0];z+=p[1]}x/=ring.length;z/=ring.length;const area=Math.abs(twiceArea)/2;const town=x>-330&&x<250&&z>-350&&z<100;return{style:hash(building.id)%HOUSE_COUNT,shop:town&&area>150,flip:twiceArea>0?-1:1,area,x,z}}
 export function facadeStyle(profile,id,bay=0,height=0){return height>=3.5?28+profile.style:profile.shop?HOUSE_COUNT+(hash(id)+bay+SHOP_COUNT*10000)%SHOP_COUNT:profile.style}

@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,tunnels,foliage}){
+export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,tunnels,foliage,openSpaces}){
  let seed=1948;const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};const color=new T.Color(),dummy=new T.Object3D(),up=new T.Vector3(0,1,0);
  const leaves=['#c4d1b9','#ced8bd','#d6dcbf','#b9cbb9','#d9ddc5','#cbd8c1'];
  function batch(geometry,base,count){const m=new T.InstancedMesh(geometry,new T.MeshLambertMaterial({color:base,flatShading:true,side:T.DoubleSide}),count);scene.add(m);return m}
@@ -8,7 +8,7 @@ export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,
  for(const m of [crowns,conifers,shrubs])scene.add(m);
  const shadow=new T.InstancedMesh(new T.CircleGeometry(1,8),new T.MeshBasicMaterial({color:'#0c3024',transparent:true,opacity:.13,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}),treeCount);scene.add(shadow);
  let nt=0,nc=0,np=0,ns=0,nf=0,nk=0;
- function valid(x,z,clearance,roadMargin=2){if(Math.abs(x)>3150||Math.abs(z)>3150||tunnels?.clearPortal(x,z))return false;const r=network.at(x,z);if(r&&r.d<r.r.width/2+roadMargin+clearance)return false;if(hydro.channel(x,z))return false;for(const[dx,dz]of [[0,0],[clearance,0],[-clearance,0],[0,clearance],[0,-clearance]])if(!freeBuildings(x+dx,z+dz))return false;return true}
+ function valid(x,z,clearance,roadMargin=2){if(!openSpaces.allows(x,z,clearance))return false;if(Math.abs(x)>3150||Math.abs(z)>3150||tunnels?.clearPortal(x,z))return false;const r=network.at(x,z);if(r&&r.d<r.r.width/2+roadMargin+clearance)return false;if(hydro.channel(x,z))return false;for(const[dx,dz]of [[0,0],[clearance,0],[-clearance,0],[0,clearance],[0,-clearance]])if(!freeBuildings(x+dx,z+dz))return false;return true}
  function matrix(mesh,index,x,y,z,sx,sy,sz,rotation=0){dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,rotation,0);dummy.updateMatrix();mesh.setMatrixAt(index,dummy.matrix)}
  function tree(x,z,urban=false){const h=(urban?4.5:6)+rand()*(urban?5:10),y=ground(x,z),pine=!urban&&rand()<.28,r=urban?1.8+rand()*1.5:2+rand()*2.5;matrix(trunks,nt,x,y+h*.35,z,1,h*.7,1);if(rand()<.12){matrix(cabbage,nk,x,y+h*.7,z,2.5,1.5,2.5,rand()*6);cabbage.setColorAt(nk++,color.set('#7b995b'))}else if(pine){matrix(conifers,np,x,y+h*.65,z,r,h*.4,r,rand()*6);conifers.setColorAt(np++,color.set(leaves[Math.floor(rand()*4)]))}else{matrix(crowns,nc,x,y+h*.68,z,r,h*.25,r,rand()*6);crowns.setColorAt(nc++,color.set(leaves[Math.floor(rand()*leaves.length)]));matrix(crowns,nc,x+r*.3,y+h*.85,z-r*.2,r*.8,h*.2,r*.85,rand()*6);crowns.setColorAt(nc++,color.set(leaves[Math.floor(rand()*leaves.length)]))}dummy.position.set(x,y+.06,z);dummy.rotation.set(-Math.PI/2,0,0);dummy.scale.set(r*1.5,r*1.15,1);dummy.updateMatrix();shadow.setMatrixAt(nt,dummy.matrix);nt++}
  // Small planted pockets around the civic lawn and town-centre verges.
