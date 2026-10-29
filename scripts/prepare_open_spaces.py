@@ -4,7 +4,7 @@ from pyproj import Transformer
 from shapely.geometry import Polygon,LineString,mapping
 from shapely.ops import unary_union,polygonize
 ROOT=pathlib.Path(__file__).resolve().parents[1];nodes={};ways={};rels={}
-for p in pathlib.Path('/private/tmp/wainui-osm-expanded').glob('*.osm'):
+for p in [*pathlib.Path('/private/tmp/wainui-osm-expanded').glob('*.osm'),*pathlib.Path('/private/tmp/wainui-regional-osm').glob('*.osm')]:
  for e in E.parse(p).getroot():
   if e.tag=='node':nodes[e.attrib['id']]=(float(e.attrib['lon']),float(e.attrib['lat']))
   elif e.tag=='way':ways[e.attrib['id']]=e
@@ -33,7 +33,7 @@ for e in list(ways.values())+list(rels.values()):
  if not wood and kind not in ['park','pitch','playground','grass','recreation_ground','village_green']:continue
  g=geometry(e)
  if g is None or g.is_empty:continue
- if g.bounds[2]<-3400 or g.bounds[0]>3400 or g.bounds[3]<-3400 or g.bounds[1]>3400:continue
+ if g.bounds[2]<-10500 or g.bounds[0]>5500 or g.bounds[3]<-11500 or g.bounds[1]>9000:continue
  if wood:woods.append(g)
  else:candidates.append((e,t,kind,g))
 woodland=unary_union(woods);features=[]

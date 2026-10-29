@@ -1,0 +1,19 @@
+{
+  "width": 641,
+  "height": 821,
+  "step": 25,
+  "minX": -10500,
+  "maxX": 5500,
+  "minZ": -11500,
+  "maxZ": 9000,
+  "bounds": {
+    "minX": -10000,
+    "maxX": 5000,
+    "minZ": -11000,
+    "maxZ": 8500
+  },
+  "datum": 90.849,
+  "verticalScale": 1,
+  "sources": "LINZ Hutt City LiDAR 2025; Wellington LiDAR 2013\u20132014; national 8m contour DEM for gaps",
+  "missingOffshoreSamples": 85084
+}
