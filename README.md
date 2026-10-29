@@ -45,7 +45,7 @@ Roof surfaces use a 4096 × 4096 aerial mosaic covering approximately 2.45km squ
 
 Source: Hutt City Council Aerials_2025 service, urban aerial orthophotography captured 29 March 2025 according to its service description. © NZ Aerial Surveys and Hutt City Council, CC BY 4.0. Changes: downloaded tiles stitched, cropped, resampled and JPEG-compressed; mapped onto derived roof surfaces. https://maps.huttcity.govt.nz/server02/rest/services/Aerials_2025/MapServer . Licence: https://creativecommons.org/licenses/by/4.0/ .
 
-Facade textures remain procedural. Aerial photographs cannot supply accurate shopfronts or street-facing walls. Those require suitably licensed street-level photographs or textured 3D model data. Photographs and the 2021 building outlines have different capture dates; roof parallax and later building changes can cause local mismatch.
+Facade textures use original generated photographic artwork. They depict fictional buildings, not the actual street-facing walls or businesses. Accurate facades would require suitably licensed street-level photographs or textured 3D model data. Photographs and the 2021 building outlines have different capture dates; roof parallax and later building changes can cause local mismatch.
 
 ## Expanded valley, rivers and traffic
 
@@ -63,9 +63,9 @@ Run `node tests/movement-network.mjs` for regression coverage of flight collisio
 
 ## Fictional facade and road variety
 
-The procedural library now has 16 house fronts (weatherboard, vertical timber, brick, roughcast, stucco, cottages and garages), 12 fictional shopfronts (dairy, bakery, fish and chips, cafe, books, hardware, market, laundrette, barber, florist, bikes and records), and seven road surfaces. Shop signs, awnings, posters, displays, doors, glazing, curtains and foundations are painted into small pixel textures. Matching emissive masks light the correct windows and shop signs at night.
+The facade library uses a photographic atlas of eight fictional house fronts and eight fictional shops, with restrained paint variants across 16 house and 12 shop style slots. Weatherboard, timber grain, brickwork, roughcast, glass, curtains, doors and modest shop signs retain visible material detail. Separate cropped window bays serve upper floors; doors and shop signs only occur at ground level. Matching image-derived window masks light the interiors at night.
 
-Building ID and ground-floor bay select the fictional facade consistently. Commercial-looking buildings in the town centre receive shop fronts at ground level; upper floors use residential fronts. Wall geometry is split by storey for texture assignment without changing its outline. Roof photographs and the measured terrain remain intact.
+Facade bays are anchored to footprint corners at approximately 5.5m intervals. Detailed wall panels are cut at both bay and storey boundaries, preventing partial signs, mid-window material changes and upside-down facades. The cuts preserve wall surface area and the measured footprint. Roof photography and terrain remain unchanged. Run `node tests/facade-mapping.mjs` for bay, winding, storey and wall-area checks. Original generation prompts and saved asset paths are in [ASSET-PROMPTS.md](ASSET-PROMPTS.md).
 
 Road materials distinguish fresh asphalt, weathered asphalt, coarse chipseal, heavy patching, utility repairs, gravel and pavers, based on mapped surface/type tags and a stable street-name seed. UVs follow the street's direction, with longitudinal tyre wear, cracks, repair seams and drain covers. Bridge, pedestrian and track surface rules are distinct. These are deliberately fictional visual treatments, not records of actual business tenants or pavement condition.
 
@@ -80,3 +80,7 @@ Terrain and intersecting surface material fragments are clipped at the portals. 
 ## Dense hillside canopy
 
 A second, spatially batched canopy layer turns woodland slopes into continuous bush rather than sparse trees on grass. A coarse appearance mask is inferred from the existing licensed aerial mosaic; it is a visual heuristic, not a surveyed land-cover classification. Tree crowns overlap on a jittered 14m grid, with woodland ground tint, closer trunks and undergrowth. Nearby trunks and shrubs are culled by camera distance, and forest crowns are divided into spatial chunks for frustum culling. Roads, buildings, tunnel entrances and likely clearings remain excluded. Rebuild the mask with `scripts/forest_mask.py`. The original street trees and planting remain.
+
+## Detailed foliage cards
+
+Broadleaf crowns and shrubs now use a transparent atlas with four original photographic foliage variants, carried on three crossed vertical cards and two canopy slices. Alpha testing preserves irregular leaf silhouettes and gaps without transparent sorting; canopy slices retain coverage from the drone. Shared materials, per-instance atlas selection, gentle wind, chunk culling and the existing near-distance trunk/undergrowth limits keep the dense woodland batched. Trunks, cabbage-tree fans and flax remain low-poly geometry. Planting positions remain inferred/decorative.
