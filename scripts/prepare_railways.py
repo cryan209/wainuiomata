@@ -2,7 +2,7 @@
 import pathlib,json,xml.etree.ElementTree as E,math,heapq,re
 import numpy as np
 from pyproj import Transformer
-ROOT=pathlib.Path(__file__).resolve().parents[1];paths=list(pathlib.Path('/private/tmp/wainui-regional-osm').glob('*.osm'));ways={};relations={};station_nodes={};wanted=set()
+ROOT=pathlib.Path(__file__).resolve().parents[1];paths=[p for folder in ['wainui-regional-osm','wainui-upper-osm'] for p in pathlib.Path('/private/tmp',folder).glob('*.osm')];ways={};relations={};station_nodes={};wanted=set()
 def tags(e):return{x.attrib['k']:x.attrib['v'] for x in e.findall('tag')}
 for i,p in enumerate(paths):
  for e in E.parse(p).getroot():
@@ -20,11 +20,15 @@ for p in paths:
    x,y=project.transform(float(e.attrib['lon']),float(e.attrib['lat']));nodes[e.attrib['id']]=(x-ox,oy-y);node_tags[e.attrib['id']]=tags(e)
 surface=np.load('/private/tmp/wainui-regional-survey/surface.npz')['dem'];terrainMeta=json.loads((ROOT/'dist/regional-terrain.json').read_text());terrain=np.frombuffer((ROOT/'dist/regional-terrain.bin').read_bytes(),dtype='<i4').reshape(terrainMeta['height'],terrainMeta['width'])/100
 def ground(x,z):
- u=min(surface.shape[1]-1.001,max(0,(x+10500)/4));v=min(surface.shape[0]-1.001,max(0,(z+11500)/4));i=int(u);j=int(v);fx=u-i;fz=v-j;values=[float(surface[j,i]),float(surface[j,i+1]),float(surface[j+1,i]),float(surface[j+1,i+1])]
+ u=min(terrain.shape[1]-1.001,max(0,(x-terrainMeta['minX'])/terrainMeta['step']));v=min(terrain.shape[0]-1.001,max(0,(z-terrainMeta['minZ'])/terrainMeta['step']));i,j=int(u),int(v);fx,fz=u-i,v-j
+ coarse=float(terrain[j,i]*(1-fx)*(1-fz)+terrain[j,i+1]*fx*(1-fz)+terrain[j+1,i]*(1-fx)*fz+terrain[j+1,i+1]*fx*fz)
+ edge=min(x+10500,z+11500,-10500+(surface.shape[1]-1)*4-x,-11500+(surface.shape[0]-1)*4-z)
+ if edge<0:return coarse
+ u=min(surface.shape[1]-1.001,max(0,(x+10500)/4));v=min(surface.shape[0]-1.001,max(0,(z+11500)/4));i,j=int(u),int(v);fx,fz=u-i,v-j;values=[float(surface[j,i]),float(surface[j,i+1]),float(surface[j+1,i]),float(surface[j+1,i+1])]
+ if min(values)<-1000:return coarse
  h=values[0]*(1-fx)*(1-fz)+values[1]*fx*(1-fz)+values[2]*(1-fx)*fz+values[3]*fx*fz
- if min(values)<-1000:h=float(terrain[min(terrain.shape[0]-1,max(0,round((z+11500)/25))),min(terrain.shape[1]-1,max(0,round((x+10500)/25)))])
- return h
-def inbounds(p):return -10600<p[0]<5600 and -11600<p[1]<9100
+ blend=min(1,edge/200);return coarse*(1-blend)+h*blend
+def inbounds(p):return terrainMeta['bounds']['minX']<p[0]<terrainMeta['bounds']['maxX'] and terrainMeta['bounds']['minZ']<p[1]<terrainMeta['bounds']['maxZ']
 tracks=[];platforms=[];station_candidates=[]
 for id,w in ways.items():
  t=w['tags'];raw=[(nodes[n][0],nodes[n][1],n) for n in w['refs'] if n in nodes]
@@ -86,7 +90,7 @@ for name,x,z in station_candidates:
  if 'Bus' in name or 'bus' in name:continue
  if inbounds((x,z)):stations.setdefault(name,{'name':name,'x':round(x,3),'z':round(z,3),'h':round(ground(x,z),3)})
 from rail_profile import smooth_profiles
-smooth_profiles(tracks)
+smooth_profiles(tracks,iterations=180)
 # Use only active main/branch tracks for the ambient train, not yards or industrial spurs.
 graph={};points={}
 for t in tracks:
@@ -108,7 +112,7 @@ def route(start,end):
  while path[-1]!=a:path.append(previous[path[-1]])
  return[points[k] for k in reversed(path)]
 routes=[]
-start=stations.get('Petone') or stations.get('Ngauranga') or stations.get('Ava');end=stations.get('Pōmare') or stations.get('Taitā') or stations.get('Naenae')
+start=stations.get('Petone') or stations.get('Ngauranga') or stations.get('Ava');end=stations.get('Upper Hutt') or stations.get('Pōmare') or stations.get('Taitā') or stations.get('Naenae')
 if start and end:
  path=route(start,end)
  if len(path)>20:routes.append({'name':'Hutt Valley commuter','p':path})

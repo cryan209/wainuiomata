@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import * as T from '../dist/vendor/three.js';
+import {createRoadNetwork} from '../dist/water-roads.js';
+import {selectGroundTiles} from '../dist/ground-detail.js';
+import fs from 'node:fs';
+const scene=new T.Scene(),hydro={ground:(x,z)=>Math.abs(z)<8?7:10,channel:(x,z)=>Math.abs(z)<8?{y:9}:null};
+const network=createRoadNetwork(scene,{elements:[{id:1,tags:{highway:'secondary',bridge:'yes'},geometry:[{x:0,z:-10,node:1},{x:0,z:10,node:2}]}]},hydro,()=>10,{asphalt:null,concrete:null});let underwaterMiddle=0,railVertices=0;
+scene.traverse(o=>{if(!o.geometry)return;const p=o.geometry.attributes.position;if(o.userData.surface==='rail')railVertices+=p.count;if(o.userData.surface==='structure')for(let i=0;i<p.count;i++)if(Math.abs(p.getZ(i))<5&&p.getY(i)<9)underwaterMiddle++});assert.equal(underwaterMiddle,0,'Short bridges keep channel clear of central piers');assert.ok(railVertices>0);assert.equal(network.ground(0,0),7,'Riverbed remains below bridge');assert.ok(network.walkHeight(0,0)>10.6);
+const meta=JSON.parse(fs.readFileSync(new URL('../dist/ground-detail.json',import.meta.url)));assert.ok(meta.tiles.length>100);const selected=selectGroundTiles(meta.tiles,{x:0,z:0});assert.equal(selected.length,4);assert.ok(selected.reduce((s,t)=>s+t.width*t.height,0)<=16*1024*1024);for(const t of selected){assert.ok(t.metresPerPixel<=.25);assert.ok(fs.existsSync(new URL('../dist/'+t.image,import.meta.url)))}assert.equal(selectGroundTiles(meta.tiles,{x:100000,z:100000}).length,0);
+console.log('PASS: bridge water clearance, no short-span central piers, rail geometry, native aerial assets and bounded nearby texture selection.');

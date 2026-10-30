@@ -1,9 +1,9 @@
 import * as T from './vendor/three.js';
 import {makePhotoFacades} from './photo-facades.js';
-import {makeRoadTextures} from './road-textures.js';
+import {makeRoadTextures} from './road-textures.js?v=local-road-aerial-48';
 // Small, repeatable pixel textures keep the PS2 feel without a sepia colour cast.
 function random(seed){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646}}
-function texture(size,paint,seed=3){const canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');paint(ctx,size,random(seed));const t=new T.CanvasTexture(canvas);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.NearestFilter;t.minFilter=T.LinearMipmapLinearFilter;t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t}
+function texture(size,paint,seed=3){const canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');paint(ctx,size,random(seed));const t=new T.CanvasTexture(canvas);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.LinearFilter;t.minFilter=T.LinearMipmapLinearFilter;t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;return t}
 function grain(c,n,r,count,light,dark){for(let i=0;i<count;i++){c.fillStyle=r()>.5?light:dark;const x=Math.floor(r()*n),y=Math.floor(r()*n);c.fillRect(x,y,r()>.85?2:1,1)}}
 export function makeTextures(facadeImage,surfaceImage){
  const grass=texture(256,(c,n,r)=>{c.fillStyle='#529749';c.fillRect(0,0,n,n);for(let i=0;i<2500;i++){c.fillStyle=['#62a453','#478c43','#70ad59','#3f843e','#579e48'][i%5];let x=Math.floor(r()*n),y=Math.floor(r()*n);c.fillRect(x,y,2+Math.floor(r()*4),1+Math.floor(r()*3))}for(let i=0;i<1800;i++){c.fillStyle=r()>.5?'#82b766':'#397a39';c.fillRect(Math.floor(r()*n),Math.floor(r()*n),1,2)}});

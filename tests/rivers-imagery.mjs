@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+import * as T from '../dist/vendor/three.js';
+import {vegetationClear} from '../dist/river-clearance.js';
+import {aerialUV,applyGroundImagery} from '../dist/ground-imagery.js';
+const hydro={nearChannel:(x,z,margin)=>Math.abs(x)<6+margin};assert.equal(vegetationClear(hydro,0,0,4),false);assert.equal(vegetationClear(hydro,9,0,4),false,'Canopy footprint stays outside river even when trunk is on bank');assert.equal(vegetationClear(hydro,13,0,4),true);assert.equal(vegetationClear(hydro,7,0,0),false,'Small planting retains bank margin');
+const bounds={minX:-100,maxX:100,minZ:-200,maxZ:200};assert.deepEqual(aerialUV(bounds,-100,-200),{u:0,v:1});assert.deepEqual(aerialUV(bounds,100,200),{u:1,v:0});assert.deepEqual(aerialUV(bounds,0,0),{u:.5,v:.5});
+const material=new T.MeshLambertMaterial();let called=false;material.onBeforeCompile=()=>called=true;const texture=new T.Texture();applyGroundImagery(material,[{texture,bounds},{texture,bounds,fade:80}]);const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <color_fragment>'};material.onBeforeCompile(shader);assert.ok(called,'Existing coast/tunnel shader hooks remain chained');assert.equal(shader.uniforms.groundPhoto0.value,texture,'Imagery reuses existing GPU texture');assert.ok(shader.fragmentShader.includes('1.-uv.y'));assert.ok(shader.fragmentShader.includes('smoothstep'));assert.ok(shader.fragmentShader.indexOf('mix(diffuseColor.rgb')>shader.fragmentShader.indexOf('#include <color_fragment>'),'Photographs retain neutral colour after vegetation tint');
+console.log('PASS: river canopy clearance, bank margin, georeferenced aerial orientation, edge fading, shared textures and shader chaining.');

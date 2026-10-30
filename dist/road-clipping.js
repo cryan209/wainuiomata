@@ -1,0 +1,7 @@
+// Subtract convex road footprints from surface triangles, retaining interpolated heights.
+const cross=(a,b,p)=>(b.x-a.x)*(p.z-a.z)-(b.z-a.z)*(p.x-a.x);
+export function convexFootprint(points){const p=[...points].sort((a,b)=>a.x-b.x||a.z-b.z),half=values=>{const out=[];for(const v of values){while(out.length>1&&cross(out.at(-2),out.at(-1),v)<=1e-8)out.pop();out.push(v)}return out},a=half(p),b=half(p.reverse());return a.slice(0,-1).concat(b.slice(0,-1))}
+function split(poly,a,b){const inside=[],outside=[];for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length],dp=cross(a,b,{x:p[0],z:p[2]}),dq=cross(a,b,{x:q[0],z:q[2]}),pin=dp>=-1e-8,qin=dq>=-1e-8;(pin?inside:outside).push(p);if(pin!==qin){const t=dp/(dp-dq),v=p.map((n,j)=>n+(q[j]-n)*t);inside.push(v);outside.push(v)}}return{inside,outside}}
+export function subtractFootprint(poly,footprint){let remaining=poly;const fragments=[];for(let i=0;i<footprint.length&&remaining.length>=3;i++){const{inside,outside}=split(remaining,footprint[i],footprint[(i+1)%footprint.length]);if(outside.length>=3)fragments.push(outside);remaining=inside}return fragments}
+export function triangulateFragments(polygons){const out=[];for(const p of polygons)for(let i=1;i<p.length-1;i++){const a=p[0],b=p[i],c=p[i+1],area=(b[0]-a[0])*(c[2]-a[2])-(b[2]-a[2])*(c[0]-a[0]);if(Math.abs(area)>1e-7)out.push(a,b,c)}return out}
+export function insideFootprint(x,z,outline){return outline.every((p,i)=>cross(p,outline[(i+1)%outline.length],{x,z})>=-1e-7)}
