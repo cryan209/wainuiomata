@@ -5,7 +5,7 @@ import {roadWidth,roadLanes,laneWidth,isOneway,inheritLanes,roadIndex,associateP
 import {applyRoadDetail} from './road-textures.js?v=local-road-aerial-48';
 import {roadStyle} from './appearance.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export {createHydrology} from './rivers.js?v=road-surface-47';
+export {createHydrology} from './rivers.js?v=inland-water-99';
 export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHook,railways,{buildGeometry=true,roadMaterialHook=null,streamGeometry=null}={}){
  const roads=[],overrides=new Map(),clipped=[];const bounds=map.bounds||{minX:-3350,maxX:3350,minZ:-3350,maxZ:3350};
  // Clip each segment to the loaded terrain rather than projecting distant map nodes onto its edge.
