@@ -10,9 +10,9 @@ from rasterio.transform import from_origin,from_bounds as raster_bounds
 from rasterio.windows import from_bounds
 from rasterio.warp import reproject
 from shapely.geometry import Polygon,Point
-from shapely.strtree import STRtree
 from PIL import Image
 from lib.regional_map import load_map,save_map
+from lib.osm_heights import tag_height,osm_polygon,HeightIndex
 ROOT=pathlib.Path(__file__).resolve().parents[1];D=ROOT/'dist';CACHE=pathlib.Path('/private/tmp/wainui-wellington');CACHE.mkdir(exist_ok=True)
 def load(n):return json.loads((D/n).read_text())
 def save(n,d):(D/n).write_text(json.dumps(d,separators=(',',':')))
@@ -62,19 +62,14 @@ exec(compile(coastSource,str(ROOT/'scripts/prepare_regional_coast.py'),'exec'),{
 coast=load('regional-coast.json');mask=Image.open(D/coast['mask']);offset=round((previous['bounds']['minX']-nb['minX'])/7.8125);mask.paste(oldMask,(offset,0));mask.save(D/coast['mask'],optimize=True)
 forest=Image.fromarray(np.fromfile(D/'regional-forest.bin',dtype='u1').reshape(coast['forest']['height'],coast['forest']['width']));forest.paste(oldForest,(round((previous['bounds']['minX']-nb['minX'])/31.25),0));(D/'regional-forest.bin').write_bytes(np.array(forest).tobytes())
 def ground(x,z):return float(terrain[min(m['height']-1,max(0,round((z-m['minZ'])/25))),min(m['width']-1,max(0,round((x-m['minX'])/25)))])/100
-# Match tagged OSM building heights to official footprints where available.
+# Match tagged OSM building heights to official footprints where available (see lib/osm_heights.py).
 osmPolys=[];osmHeights=[]
 for way in ctx['ways'].values():
  tags=ctx['tags'](way)
  if not tags.get('building'):continue
- try:height=float(tags['height'].replace('m','').strip()) if tags.get('height') else float(tags.get('building:levels','0'))*3.2
- except ValueError:continue
- points=[ctx['coords'][n.attrib['ref']] for n in way.findall('nd') if n.attrib['ref'] in ctx['coords']]
- if len(points)<4 or not 2<height<220:continue
- poly=Polygon([(p['x'],p['z']) for p in points]).buffer(0)
- if poly.is_empty:continue
- osmPolys.append(poly);osmHeights.append(height)
-tree=STRtree(osmPolys)
+ height=tag_height(tags);poly=osm_polygon([(p['x'],p['z']) for p in (ctx['coords'][n.attrib['ref']] for n in way.findall('nd') if n.attrib['ref'] in ctx['coords'])])
+ if height and poly:osmPolys.append(poly);osmHeights.append(height)
+heights=HeightIndex(osmPolys,osmHeights)
 manifest=load('regional-buildings.json');chunks={c['id']:c for c in manifest['chunks']};existing={b['id'] for c in manifest['chunks'] for b in load(c['file'])['buildings']};existing.update(b['id'] for name in ['buildings.json','buildings-outer.json'] for b in load(name));chunkData={};features=[]
 for offset in range(0,160000,2000):
  cache=CACHE/f'footprints-{offset}.json'
@@ -98,9 +93,9 @@ for feature in features:
   if p.is_empty or p.geom_type!='Polygon':continue
   x,z=p.representative_point().coords[0]
   if not(-23500<x<-9000 and -11000<z<15000):continue
-  matches=[int(i) for i in tree.query(p.representative_point()) if osmPolys[int(i)].covers(p.representative_point())]
-  height=osmHeights[matches[0]] if matches else 3.8 if p.area<450 else 7.5 if p.area<1500 else 12
-  heightSource='OSM height / building:levels' if matches else 'inferred from footprint area; not surveyed';tagged+=bool(matches);g=ground(x,z);key=f'{math.floor(x/512)},{math.floor(z/512)}'
+  matched=heights.match(p)
+  height=matched or (3.8 if p.area<450 else 7.5 if p.area<1500 else 12)
+  heightSource='OSM height / building:levels' if matched else 'inferred from footprint area; not surveyed';tagged+=bool(matched);g=ground(x,z);key=f'{math.floor(x/512)},{math.floor(z/512)}'
   if key not in chunkData:chunkData[key]=load(chunks[key]['file']) if key in chunks else {'buildings':[]}
   rings=[list(p.exterior.coords)]+[list(q.coords) for q in p.interiors];chunkData[key]['buildings'].append({'id':id,'rings':[[[round(a,2),round(b,2)] for a,b in ring] for ring in rings],'ground':round(g,2),'height':round(height,2),'heightSource':heightSource,'suburb':at.get('suburb_locality') or '', 'name':at.get('name') or ''})
   rect=list(p.minimum_rotated_rectangle.exterior.coords);a,c,d=rect[:3];far.extend([sum(q[0] for q in rect[:4])/4,sum(q[1] for q in rect[:4])/4,g-datum,height,math.dist(a,c),math.dist(c,d),-math.atan2(c[1]-a[1],c[0]-a[0]),float(id%8)]);added+=1

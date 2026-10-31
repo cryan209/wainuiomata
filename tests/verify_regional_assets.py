@@ -7,8 +7,8 @@ for chunk in manifest['chunks']:
  buildings=json.loads((root/chunk['file']).read_text())['buildings']
  assert len(buildings)==chunk['count'];count+=len(buildings)
  for building in buildings:
-  # Valid source returns are >1.6m; the packaged height rounds to centimetres.
-  assert 1.6<=building['height']<=100 and math.isfinite(building['ground'])
+  # Valid source returns are >1.6m; the packaged height rounds to centimetres. The tallest is the 116m Majestic Centre.
+  assert 1.6<=building['height']<=120 and math.isfinite(building['ground'])
   for ring in building['rings']:assert ring[0]==ring[-1] and len(ring)>=4
  if 'roof' in chunk:
   roof=chunk['roof'];image=Image.open(root/roof['image']);image.load()
