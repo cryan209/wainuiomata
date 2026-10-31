@@ -32,4 +32,25 @@ def beehive(m,chunks):
  for b in added:
   if b['height']>44:b['roofColour']=BRONZE
  data['buildings']=[b for b in data['buildings'] if b['id']!=3502564]+added;entry['count']=len(data['buildings']);m['count']+=len(added)-1
-def apply(m,chunks):beehive(m,chunks)
+# Sky Stadium: LINZ draws the stand as one oval ring around the pitch, which came out as a 12m gabled shed. The ring is cut
+# into bands stepping up from the pitch edge (a seating bowl from above) to a 27m white outer wall and roof canopy. Ids share
+# hash(id)%16=5 and facade 'plain' gives them white stucco cladding without windows (region-stream.js).
+STADIUM_STEPS=[(5,3),(10,7),(15,11),(20,15),(25,19)];STADIUM_TOP=27;STADIUM_IDS=[331765803,331765819,331765837,331765891,331765908,331765926,331765939,331765980];STADIUM_SOURCE='Landmark model: Sky Stadium (stepped bowl)'
+def rings_of(q):return [[[round(a,2),round(b,2)] for a,b in r.coords] for r in [q.exterior,*q.interiors]]
+def stadium(m,chunks):
+ entry=next(c for c in m['chunks'] if c['id']=='-27,1');data=chunks[entry['id']]
+ if any(b.get('heightSource')==STADIUM_SOURCE for b in data['buildings']):return
+ source=next(b for b in data['buildings'] if b['id']==3317658);stand=Polygon(source['rings'][0],source['rings'][1:]);pitch=Polygon(source['rings'][1])
+ bands=[];inner=pitch
+ for d,h in STADIUM_STEPS:outer=pitch.buffer(d,32);bands.append((stand.intersection(outer).difference(inner),h));inner=outer
+ bands.append((stand.difference(inner),STADIUM_TOP));added=[]
+ for band,h in bands:
+  for q in getattr(band,'geoms',[band]):
+   if q.geom_type!='Polygon' or q.area<8:continue
+   added.append({'id':STADIUM_IDS[len(added)],'facade':'plain','rings':rings_of(q),'ground':source['ground'],'height':h,'heightSource':STADIUM_SOURCE,'suburb':source['suburb'],'name':'Sky Stadium','roof':{'kind':'flat','rise':0,'frame':frame(rings_of(q))},'roofColour':'#e4e5e1' if h==STADIUM_TOP else '#8f969c'})
+ data['buildings']=[b for b in data['buildings'] if b['id']!=3317658]+added;entry['count']=len(data['buildings']);m['count']+=len(added)-1
+# National War Memorial Carillon: the 51m part is split out by fix_wellington_heights.py; OSM gives it a pyramidal roof.
+def carillon(m,chunks):
+ data=chunks['-28,7'];tower=next((b for b in data['buildings'] if b['id']==342320801),None)
+ if tower and tower['roof']['kind']=='flat':tower['height']=47;tower['roof'].update(kind='hip',rise=4)
+def apply(m,chunks):beehive(m,chunks);stadium(m,chunks);carillon(m,chunks)
