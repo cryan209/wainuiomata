@@ -1,7 +1,7 @@
 import * as T from './vendor/three.js';
 import {createTrafficRules} from './traffic-rules.js?v=cockpit-breakaway-53';
 import {overlapsVehicle} from './vehicle-contact.js?v=cockpit-breakaway-53';
-import {stepCar} from './vehicle-physics.js?v=cockpit-breakaway-53';
+import {stepCar} from './vehicle-physics.js?v=handbrake-76';
 import {createHeadlightPools} from './night-lights.js?v=night-walls-73';
 import {CLASSICS,createClassicFleet} from './classic-cars.js?v=sa-fleet-floors-75';
 export function createTraffic(scene,network,count=144,{parkingClear=()=>true,physicsWorld=null,viewDirection=null}={}){
