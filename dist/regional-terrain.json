@@ -1,1 +1,19 @@
-{"width":1241,"height":1701,"step":25,"minX":-10500,"maxX":20500,"minZ":-23500,"maxZ":19000,"bounds":{"minX":-10000,"maxX":20000,"minZ":-23000,"maxZ":18500},"datum":90.849,"verticalScale":1,"sources":"LINZ Hutt City LiDAR 2025; Wellington LiDAR 2013\u20132014; national 8m contour DEM for gaps; south/east extension: LINZ national contour DEM (8m source / 25m grid); south/east extension: LINZ national contour DEM (8m source / 25m grid); Upper Hutt: LINZ national contour DEM (8m source / 25m grid)","missingOffshoreSamples":85084}
+{
+  "width": 2321,
+  "height": 1701,
+  "step": 25,
+  "minX": -24000,
+  "maxX": 34000,
+  "minZ": -23500,
+  "maxZ": 19000,
+  "bounds": {
+    "minX": -23500,
+    "maxX": 33500,
+    "minZ": -23000,
+    "maxZ": 18500
+  },
+  "datum": 90.849,
+  "verticalScale": 1,
+  "sources": "LINZ Hutt City LiDAR 2025; Wellington LiDAR 2013\u20132014; national 8m contour DEM for gaps; south/east extension: LINZ national contour DEM (8m source / 25m grid); south/east extension: LINZ national contour DEM (8m source / 25m grid); Upper Hutt: LINZ national contour DEM (8m source / 25m grid); Wellington City: LINZ 8m contour DEM on a 25m grid; Remutaka Range to Featherston: LINZ national contour DEM (8m source / 25m grid)",
+  "missingOffshoreSamples": 881529
+}

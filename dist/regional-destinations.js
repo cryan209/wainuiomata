@@ -13,6 +13,18 @@ export function regionalDestinations(world){
  }
  // Anchors are on mapped entrance roads and tracks, not invented routes.
  for(const [id,name,road,anchor]of [['upperhutt','Upper Hutt · Main Street','Main Street',{x:10838,z:-15076}],['silverstream','Silverstream · Kiln Street','Kiln Street',{x:5700,z:-12100}],['trentham','Trentham · Fergusson Drive','Fergusson Drive',{x:8300,z:-14200}],['totara-park','Tōtara Park · California Drive','California Drive',{x:12400,z:-16900}]]){const hit=nearestRoad(road,anchor);if(hit&&hit.d<2000){const offset=hit.width/2+.8;result.set(id,{name,x:hit.x+Math.cos(hit.yaw)*offset,z:hit.z-Math.sin(hit.yaw)*offset,yaw:hit.yaw,pitch:-.05})}}
+ // Wellington arrival points use actual mapped streets and roadside clearance.
+ for(const [id,name,road,x,z] of [
+  ['wellington-cbd','Wellington · Lambton Quay','Lambton Quay',-14182,1754],
+  ['wellington-waterfront','Wellington · Waterfront','Jervois Quay',-13962,2481],
+  ['wellington-cuba','Wellington · Cuba Street','Cuba Street',-14313,3251],
+  ['oriental-bay','Wellington · Oriental Bay','Oriental Parade',-13050,2944],
+  ['newtown','Wellington · Newtown','Riddiford Street',-13935,5258],
+  ['karori','Wellington · Karori','Karori Road',-17307,2191],
+  ['island-bay','Wellington · Island Bay','The Parade',-14587,8466],
+  ['miramar','Wellington · Miramar','Miramar Avenue',-10929,5654],
+  ['kilbirnie','Wellington · Kilbirnie','Bay Road',-12612,6063]
+ ]){const hit=nearestRoad(road,{x,z});if(!hit||hit.d>900)continue;for(const side of [1,-1]){const offset=hit.width/2+1.2,px=hit.x+Math.cos(hit.yaw)*offset,pz=hit.z-Math.sin(hit.yaw)*offset;if(world.coast.isLand(px,pz)&&(world.free?.(px,pz)??true)){result.set(id,{name,x:px,z:pz,yaw:hit.yaw,pitch:-.06});break}}}
  const roofView=result.get('trentham');if(roofView)result.set('upper-roofs',{name:'Upper Hutt · Roof view',x:roofView.x+90,z:roofView.z+80,yaw:Math.atan2(90,80),pitch:-.55,drone:true});
  for(const [id,name,road,anchor]of [
   ['forest-park','Wainuiomata Regional Park · Hine Road','Hine Road',{x:2031,z:1609}],

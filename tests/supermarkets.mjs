@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as T from '../dist/vendor/three.js';
+import {buildSupermarket,matchSupermarket} from '../dist/supermarket.js';
+import {supermarketSites} from '../dist/supermarket-sites.js';
+import {createInteriors} from '../dist/interiors.js';
+import {buildingFaces,createStreetIndex} from '../dist/building-faces.js';
+globalThis.document={createElement(){return {getContext(){return {fillRect(){},strokeRect(){},fillText(){}};}};}};
+const room=buildSupermarket();assert.ok(room.scene.children.length>1000);assert.ok(room.clear(0,4.3));assert.ok(room.clear(0,-20),'Central aisle extends well past a small interior');
+for(let z=4;z>=-23;z-=.1)assert.ok(room.clear(0,z),'Continuous entrance-to-produce route');
+assert.equal(room.clear(17,0),false);assert.equal(room.clear(0,-31),false);for(const b of room.obstacles)assert.equal(room.clear(b.x,b.z),false);
+assert.equal(supermarketSites.length,33);assert.equal(new Set(supermarketSites.map(s=>s.id)).size,33);
+const data=JSON.parse(fs.readFileSync(new URL('../dist/buildings.json',import.meta.url))),streets=createStreetIndex(JSON.parse(fs.readFileSync(new URL('../dist/map.json',import.meta.url))));for(const b of data)b.faces=buildingFaces(b,streets);
+const site=supermarketSites.find(s=>s.name==='Woolworths Wainuiomata'),building=matchSupermarket(site,data);assert.ok(building,'Current mapped Wainuiomata store must match an actual footprint');assert.notEqual(building.id,4678705,'Do not use the old named store footprint');
+assert.equal(matchSupermarket({...site,x:100000,z:100000},data),undefined);
+const camera=new T.PerspectiveCamera();camera.position.set(site.x,2,site.z);const interiors=createInteriors({scene:new T.Scene(),world:{buildings:data,walkHeight:()=>0,free:()=>true},camera,origin:{x:0,z:0},button:{}});
+const entrance=interiors.entrances.find(e=>e.storeId===site.id);assert.ok(entrance);assert.equal(entrance.buildingId,building.id);assert.equal(entrance.kind,'supermarket');assert.equal(interiors.entrances.filter(e=>e.buildingId===building.id).length,1);
+camera.position.set(entrance.x,2,entrance.z);interiors.update(0,{enabled:true,yaw:0,pitch:0,keys:{}});assert.equal(interiors.interact(),true);assert.equal(interiors.name,site.name);interiors.view.position.set(0,1.7,-20);interiors.update(.1,{enabled:true,yaw:0,pitch:0,keys:{w:true}});assert.ok(interiors.view.position.z<-20);assert.ok(interiors.exit());
+for(const s of supermarketSites.filter(s=>s.buildingId!==undefined)){assert.equal(matchSupermarket(s,[{id:s.buildingId,faces:[{}]}]).id,s.buildingId);assert.equal(matchSupermarket(s,[{id:s.buildingId+1,faces:[{}]}]),undefined);}
+console.log('PASS: 33 mapped sites, current Wainuiomata footprint, exact regional matches, no generic replacement, stocked large store, central aisle, collisions and entry/exit');

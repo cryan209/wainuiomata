@@ -1,12 +1,14 @@
 import fs from 'node:fs';
 import * as T from '../../dist/vendor/three.js';
+import {assembleRegionalMap} from '../../dist/regional-map.js';
 const root=new URL('../../dist/',import.meta.url),json=n=>JSON.parse(fs.readFileSync(new URL(n+'.json',root))),read=n=>{const b=fs.readFileSync(new URL(n+'.bin',root));return new Int32Array(b.buffer,b.byteOffset,b.byteLength/4)};
+export function regionalMap(){const index=json('regional-map');return assembleRegionalMap(index,index.parts.map(p=>json(p.file.replace(/\.json$/,''))))}
 export function mapSource(){
  const meta=json('geodata'),coarse=read('terrain'),fine=read('terrain-fine'),regional=read('regional-terrain'),regionalMeta=json('regional-terrain'),cg={...meta.terrain,width:meta.terrain.size,height:meta.terrain.size};
  function sample(a,g,x,z){const u=T.MathUtils.clamp((x-g.minX)/g.step,0,g.width-1.000001),v=T.MathUtils.clamp((z-g.minZ)/g.step,0,g.height-1.000001),i=Math.floor(u),j=Math.floor(v),du=u-i,dv=v-j,k=j*g.width+i;return(du+dv<=1?a[k]+du*(a[k+1]-a[k])+dv*(a[k+g.width]-a[k]):a[k+g.width+1]+(1-du)*(a[k+g.width]-a[k+g.width+1])+(1-dv)*(a[k+1]-a[k+g.width+1]))/100-meta.originElevation}
  const regionalHeight=(x,z)=>sample(regional,regionalMeta,x,z),coarseHeight=(x,z)=>{const e=Math.min(x-cg.minX,z-cg.minZ,cg.minX+(cg.width-1)*cg.step-x,cg.minZ+(cg.height-1)*cg.step-z);return e<0?regionalHeight(x,z):T.MathUtils.lerp(regionalHeight(x,z),sample(coarse,cg,x,z),Math.min(1,e/100))},terrain=(x,z)=>{const f=meta.fine,e=Math.min(x-f.minX,z-f.minZ,f.minX+(f.width-1)*f.step-x,f.minZ+(f.height-1)*f.step-z);return e<0?coarseHeight(x,z):T.MathUtils.lerp(coarseHeight(x,z),sample(fine,f,x,z),Math.min(1,e/20))};
  const railways=railSource(json('railways'),meta.originElevation),raw=(x,z)=>railways.ground(x,z,terrain(x,z));
- return{meta,raw,railways,bounds:regionalMeta.bounds,elements:[...new Map([...json('map').elements,...json('regional-map').elements].map(e=>[e.id,e])).values()],waterways:[...new Map([...json('waterways'),...json('regional-waterways')].map(e=>[e.id,e])).values()]};
+ return{meta,raw,railways,bounds:regionalMeta.bounds,elements:[...new Map([...json('map').elements,...regionalMap().elements].map(e=>[e.id,e])).values()],waterways:[...new Map([...json('waterways'),...json('regional-waterways')].map(e=>[e.id,e])).values()]};
 }
 
 // Data-only equivalent of the game's rail queries; audits do not build sleepers or train meshes.

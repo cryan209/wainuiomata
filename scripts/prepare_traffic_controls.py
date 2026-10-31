@@ -1,9 +1,10 @@
 """Recover control-node tags from the cached OSM extracts used to build the map."""
 import json,pathlib,xml.etree.ElementTree as ET,collections
+from lib.regional_map import load_map
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-coords={str(p['node']):p for name in ['map','regional-map'] for r in json.load(open(ROOT/'dist'/f'{name}.json'))['elements'] for p in r['geometry'] if p.get('node')}
+coords={str(p['node']):p for elements in [json.load(open(ROOT/'dist/map.json'))['elements'],load_map()['elements']] for r in elements for p in r['geometry'] if p.get('node')}
 found={};files=[]
-for folder in ['wainui-osm-expanded','wainui-regional-osm','wainui-south-osm','wainui-upper-osm']:
+for folder in ['wainui-osm-expanded','wainui-regional-osm','wainui-south-osm','wainui-upper-osm','wainui-wellington-osm']:
  for file in pathlib.Path('/private/tmp',folder).glob('*.osm'):
   files.append(str(file))
   for node in ET.parse(file).getroot().findall('node'):

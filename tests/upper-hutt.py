@@ -2,6 +2,7 @@
 import json,pathlib,math,collections
 import numpy as np
 from PIL import Image
+import sys;sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]/'scripts'));from lib.regional_map import load_map
 D=pathlib.Path(__file__).resolve().parents[1]/'dist'
 def read(n):return json.loads((D/n).read_text())
 m=read('regional-terrain.json');grid=np.fromfile(D/'regional-terrain.bin',dtype='<i4').reshape(m['height'],m['width'])/100
@@ -14,7 +15,7 @@ for name in ['Upper Hutt','Silverstream','Trentham','Tōtara Park']:
  h=grid[round((z-m['minZ'])/25),round((x-m['minX'])/25)];assert 20<h<150,(name,h)
 assert not land(-6000,0),'Existing harbour must remain water'
 assert (D/'regional-forest.bin').stat().st_size==coast['forest']['width']*coast['forest']['height']
-roads=list({r['id']:r for file in ['map.json','regional-map.json'] for r in read(file)['elements']}.values());drive=[r for r in roads if r['tags'].get('highway') in ['motorway','trunk','primary','secondary','tertiary','unclassified','residential','living_street','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link'] and r['tags'].get('access') not in ['no','private']]
+roads=list({r['id']:r for elements in [read('map.json')['elements'],load_map()['elements']] for r in elements}.values());drive=[r for r in roads if r['tags'].get('highway') in ['motorway','trunk','primary','secondary','tertiary','unclassified','residential','living_street','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link'] and r['tags'].get('access') not in ['no','private']]
 graph=collections.defaultdict(set);points={}
 for r in drive:
  for p in r['geometry']:points[p['node']]=p

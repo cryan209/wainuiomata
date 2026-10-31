@@ -11,6 +11,7 @@ from rasterio.windows import from_bounds
 from rasterio.warp import reproject
 from PIL import Image,ImageDraw
 from shapely.geometry import Polygon,Point
+from lib.regional_map import load_map,save_map
 ROOT=pathlib.Path(__file__).resolve().parents[1];D=ROOT/'dist';CACHE=pathlib.Path('/private/tmp/wainui-upper-hutt');CACHE.mkdir(exist_ok=True)
 def load(name):return json.loads((D/name).read_text())
 def save(name,data): (D/name).write_text(json.dumps(data,separators=(',',':')))
@@ -19,11 +20,11 @@ source=(ROOT/'scripts/prepare_regional_map.py').read_text().replace("'/private/t
 source=source.replace('/6','/5').replace('range(6)','range(5)')
 for name in ['map','waterways','coast-input']:source=source.replace('dist/regional-'+name+'.json','dist/upper-'+name+'.json')
 ctx={'__file__':str(ROOT/'scripts/prepare_regional_map.py')};exec(compile(source,ctx['__file__'],'exec'),ctx)
-new=load('upper-map.json');old=load('regional-map.json');coords={str(p['node']):p for r in old['elements'] for p in r['geometry'] if p.get('node')};coords.update(ctx['coords']);merged={r['id']:r for r in old['elements']}
+new=load('upper-map.json');old=load_map();coords={str(p['node']):p for r in old['elements'] for p in r['geometry'] if p.get('node')};coords.update(ctx['coords']);merged={r['id']:r for r in old['elements']}
 for r in new['elements']:
  # Reassemble cross-boundary ways from their original ordered node references.
  r['geometry']=[coords[n.attrib['ref']] for n in ctx['ways'][r['id']].findall('nd') if n.attrib['ref'] in coords];merged[r['id']]=r
-old['elements']=list(merged.values());old['bounds'].update(maxX=20500,minZ=-23500);save('regional-map.json',old)
+old['elements']=list(merged.values());old['bounds'].update(maxX=20500,minZ=-23500);save_map(old)
 water={r['id']:r for r in load('regional-waterways.json')}
 for r in load('upper-waterways.json'):
  r['geometry']=[coords[n.attrib['ref']] for n in ctx['ways'][r['id']].findall('nd') if n.attrib['ref'] in coords];water[r['id']]=r

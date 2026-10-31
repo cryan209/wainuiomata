@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wainui pedestrians</title><style>body{margin:0;background:#ced9dd;font:15px system-ui;color:#182c37}canvas{display:block}aside{position:absolute;top:26px;left:32px}h1{font-size:25px;margin:0 0 8px}label{display:block;margin:8px 0}footer{position:absolute;bottom:25px;left:32px;color:#3a505a}a{color:inherit}</style><aside><h1>Wainui pedestrians</h1><label><input type="checkbox" id="walk" checked> Walking</label></aside><footer>Drag to rotate · Scroll to zoom · <a href="/">Return to the valley</a></footer><script type="module">
+import * as T from './vendor/three.js';
+import{createHumanRenderer}from'./people.js?v=preview-7';
+const scene=new T.Scene();scene.background=new T.Color('#ced9dd');scene.fog=new T.Fog('#ced9dd',24,65);
+const camera=new T.PerspectiveCamera(32,innerWidth/innerHeight,.1,100),renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;document.body.append(renderer.domElement);
+scene.add(new T.HemisphereLight('#e8f4ff','#7b8170',2));const sun=new T.DirectionalLight('#fff2dc',2.7);sun.position.set(4,9,-5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-9,right:9,top:9,bottom:-9});sun.shadow.bias=-.0002;scene.add(sun);
+const floor=new T.Mesh(new T.PlaneGeometry(200,200),new T.MeshLambertMaterial({color:'#abb7b7'}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const people=createHumanRenderer(scene,8);for(const m of Object.values(people.meshes)){m.castShadow=true;m.receiveShadow=true}
+const root=new T.Matrix4(),walk=document.querySelector('#walk');let azimuth=Math.PI,elevation=.12,distance=9,lookY=.95,phase=0,last=performance.now(),drag=false,lastX=0,lastY=0;
+renderer.domElement.onpointerdown=e=>{drag=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)};renderer.domElement.onpointerup=()=>drag=false;renderer.domElement.onpointermove=e=>{if(!drag)return;azimuth-=(e.clientX-lastX)*.009;elevation=T.MathUtils.clamp(elevation+(e.clientY-lastY)*.005,-.1,1.15);lastX=e.clientX;lastY=e.clientY};renderer.domElement.onwheel=e=>{e.preventDefault();distance=T.MathUtils.clamp(distance+e.deltaY*.01,1.5,22)};
+function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;if(walk.checked)phase+=dt*7;people.begin();
+ for(let i=0;i<7;i++){root.makeTranslation((i-3)*1.1,0,0);people.write(root,i,phase+i,walk.checked,i===6&&!walk.checked?{y:.78,z:-.3}:null,true)}people.finish();
+ camera.position.set(Math.sin(azimuth)*distance,lookY+Math.sin(elevation)*distance,-Math.cos(azimuth)*Math.cos(elevation)*distance);camera.lookAt(0,lookY,0);renderer.render(scene,camera)}
+onresize=()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)};requestAnimationFrame(frame);
+window.__view=(a,e,d,y=.95)=>{azimuth=a;elevation=e;distance=d;lookY=y};window.__walk=v=>walk.checked=v;
+</script></html>

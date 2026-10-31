@@ -1,6 +1,7 @@
 """Mapped streets, coastline and land cover for Lower Hutt–Petone–Eastbourne."""
 import pathlib,json,subprocess,concurrent.futures,xml.etree.ElementTree as E,time,re
 from pyproj import Transformer
+from lib.regional_map import save_map
 ROOT=pathlib.Path(__file__).resolve().parents[1];CACHE=pathlib.Path('/private/tmp/wainui-regional-osm');CACHE.mkdir(exist_ok=True)
 west,south,east,north=174.80,-41.345,175.015,-41.155
 jobs=[(i,j,(west+(east-west)*i/6,south+(north-south)*j/6,west+(east-west)*(i+1)/6,south+(north-south)*(j+1)/6)) for i in range(6) for j in range(6)]
@@ -53,7 +54,10 @@ for id,n in nodes.items():
  t=tags(n)
  if t.get('place') in ['city','town','suburb','village'] and t.get('name'):places.append({'name':t['name'],'x':coords[id]['x'],'z':coords[id]['z']})
 bounds={'minX':-10500,'maxX':5500,'minZ':-11500,'maxZ':9000}
-(ROOT/'dist/regional-map.json').write_text(json.dumps({'bounds':bounds,'elements':roads},separators=(',',':')))
+# Expansion scripts re-run this file with another output path for a single-file intermediate map.
+out=ROOT/'dist/regional-map.json'
+if out.name=='regional-map.json':save_map({'bounds':bounds,'elements':roads})
+else:out.write_text(json.dumps({'bounds':bounds,'elements':roads},separators=(',',':')))
 (ROOT/'dist/regional-waterways.json').write_text(json.dumps(water,separators=(',',':')))
 (ROOT/'dist/regional-coast-input.json').write_text(json.dumps({'bounds':bounds,'coastline':coast,'forest':forest,'beaches':beaches,'places':places,'source':'© OpenStreetMap contributors, ODbL'},separators=(',',':')))
 print('Regional roads',len(roads),'coastline sections',len(coast),'woodland polygons',len(forest),'beaches',len(beaches),flush=True)

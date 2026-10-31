@@ -7,6 +7,7 @@ import numpy as np,rasterio
 from rasterio.enums import Resampling
 from rasterio.transform import from_origin
 from rasterio.warp import reproject
+from lib.regional_map import load_map,save_map
 ROOT=pathlib.Path(__file__).resolve().parents[1];DIST=ROOT/'dist';CACHE=pathlib.Path('/private/tmp/wainui-south');CACHE.mkdir(exist_ok=True)
 # Reuse the OSM parser and resilient tiled fetcher, with its own geographic cache.
 source=(ROOT/'scripts/prepare_regional_map.py').read_text()
@@ -15,10 +16,10 @@ source=source.replace('i/6','i/4').replace('j/6','j/4').replace('(i+1)/6','(i+1)
 source=source.replace("dist/regional-map.json","dist/south-map.json").replace("dist/regional-waterways.json","dist/south-waterways.json").replace("dist/regional-coast-input.json","dist/south-coast-input.json")
 exec(compile(source,str(ROOT/'scripts/prepare_regional_map.py'),'exec'),{'__file__':str(ROOT/'scripts/prepare_regional_map.py')})
 for main,extra,key in [('regional-map.json','south-map.json','elements'),('regional-waterways.json','south-waterways.json',None)]:
- a=json.loads((DIST/main).read_text());b=json.loads((DIST/extra).read_text());rows={r['id']:r for r in (a[key] if key else a)};rows.update({r['id']:r for r in (b[key] if key else b)})
+ a=load_map() if key else json.loads((DIST/main).read_text());b=json.loads((DIST/extra).read_text());rows={r['id']:r for r in (a[key] if key else a)};rows.update({r['id']:r for r in (b[key] if key else b)})
  if key:a[key]=list(rows.values());a['bounds'].update(maxX=8500,maxZ=19000)
  else:a=list(rows.values())
- (DIST/main).write_text(json.dumps(a,separators=(',',':')))
+ save_map(a) if key else (DIST/main).write_text(json.dumps(a,separators=(',',':')))
 a=json.loads((DIST/'regional-coast-input.json').read_text());b=json.loads((DIST/'south-coast-input.json').read_text())
 for key in ['coastline','forest','beaches','places']:
  rows={json.dumps(r,sort_keys=True):r for r in a[key]+b[key]};a[key]=list(rows.values())

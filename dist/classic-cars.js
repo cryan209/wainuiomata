@@ -1,25 +1,38 @@
 import * as T from './vendor/three.js';
 import {withVehicleInterior,instrumentTexture} from './vehicle-interiors.js?v=cockpit-breakaway-52';
-import {realisticCarGeometry,vehicleEnvironment,vehiclePlateTexture,vehicleLensTexture} from './realistic-vehicles.js?v=cabin-31';
+import {realisticCarGeometry,vehicleEnvironment,vehiclePlateTexture,vehicleLensTexture} from './realistic-vehicles.js?v=sa-fleet-floors-75';
 // Era-inspired silhouettes in metres. Geometry is shared by each instanced model/material batch.
 export const CLASSICS=[
- {id:'commodore',name:'Holden Commodore VN',width:1.81,length:4.85,height:1.40,wheelbase:2.73,cabin:[-1.10,-.57,.87,1.55],roof:1.43,body:.88,lights:'wide',paint:['#8d2637','#e7e4dc','#284843','#29364e'],spoiler:true},
- {id:'falcon',name:'Ford Falcon EB',width:1.86,length:4.95,height:1.43,wheelbase:2.79,cabin:[-1.12,-.51,.91,1.57],roof:1.46,body:.91,lights:'wide',paint:['#41616c','#e1d9bf','#6f2c38','#b6bcc0']},
- {id:'skyline',name:'Nissan Skyline R32',width:1.70,length:4.55,height:1.34,wheelbase:2.61,cabin:[-1.00,-.49,.72,1.26],roof:1.35,body:.82,lights:'round',paint:['#38404b','#b6bcc2','#edece4','#283957'],spoiler:true},
- {id:'corolla',name:'Toyota Corolla AE92 hatch',width:1.66,length:4.04,height:1.38,wheelbase:2.43,cabin:[-.93,-.48,.96,1.65],roof:1.42,body:.85,lights:'small',paint:['#d9d5c9','#8b343b','#627c85','#b4b8ad'],hatch:true},
- {id:'hilux',name:'Toyota Hilux LN106',width:1.69,length:4.70,height:1.78,wheelbase:2.85,cabin:[-1.14,-.89,.18,.29],roof:1.83,body:1.03,lights:'square',paint:['#d9d5c4','#a64238','#405d72','#e6e6dd'],ute:true},
- {id:'legacy',name:'Subaru Legacy BG wagon',width:1.69,length:4.60,height:1.47,wheelbase:2.63,cabin:[-1.03,-.52,1.47,1.94],roof:1.50,body:.85,lights:'small',paint:['#35554e','#b8bbc0','#e5e1d8','#35465e'],wagon:true},
- {id:'magna',name:'Mitsubishi Magna TR wagon',width:1.78,length:4.80,height:1.49,wheelbase:2.72,cabin:[-1.10,-.57,1.67,2.07],roof:1.51,body:.91,lights:'wide',paint:['#bcb7aa','#d8d5c9','#7d9295','#8c4545'],wagon:true,plain:true},
- {id:'lancer',name:'Mitsubishi Lancer wagon',width:1.67,length:4.31,height:1.46,wheelbase:2.50,cabin:[-.93,-.49,1.48,1.91],roof:1.48,body:.86,lights:'small',paint:['#d9d9cc','#a8adb0','#697e83','#b1a28c'],wagon:true,plain:true,verticalRear:true},
- {id:'corolla-wagon',name:'Toyota Corolla AE100 wagon',width:1.68,length:4.27,height:1.46,wheelbase:2.46,cabin:[-.96,-.53,1.43,1.89],roof:1.47,body:.87,lights:'small',paint:['#d7d2be','#c0c4c3','#e4e3d9','#738c87'],wagon:true,plain:true,verticalRear:true},
- {id:'caldina',name:'Toyota Caldina T190 wagon',width:1.70,length:4.55,height:1.48,wheelbase:2.58,cabin:[-1.02,-.55,1.54,1.99],roof:1.50,body:.89,lights:'wide',paint:['#b9bfc0','#dbd8ce','#4f6862','#788694'],wagon:true,plain:true},
- {id:'hiace',name:'Toyota Hiace van',width:1.79,length:4.70,height:2.05,wheelbase:2.59,cabin:[-2.2,-2,1.9,2.2],roof:2.05,body:1.1,paint:['#e4e2d9','#bfc3c3','#b6ae97','#597889'],van:true},
- {id:'l300',name:'Mitsubishi L300 van',width:1.69,length:4.29,height:1.95,wheelbase:2.24,cabin:[-2,-1.8,1.7,2],roof:1.95,body:1.06,paint:['#d8d6c9','#b9c4c5','#bfad8f','#8e4942'],van:true,panel:true},
- {id:'city-bus',name:'Valley city bus',width:2.45,length:10.5,height:3.05,wheelbase:5.30,cabin:[-5,-4.8,4.8,5],roof:3.05,body:1.35,paint:['#d9d5bd','#c5d4ce','#d3d9df','#bdc9bd'],bus:true,acceleration:3,topSpeed:21},
- {id:'school-bus',name:'Valley school bus',width:2.40,length:8.7,height:2.90,wheelbase:4.45,cabin:[-4,-3.8,3.8,4],roof:2.90,body:1.32,paint:['#d9b94f','#ded2a8','#c6b669','#dfd8ba'],bus:true,school:true,acceleration:3.4,topSpeed:20}
+ {retro:true,id:'regent',name:'Regent box sedan',width:1.92,length:5.12,height:1.45,wheelbase:2.92,cabin:[-1.05,-.69,.99,1.43],roof:1.45,body:.94,lights:'square',retro:true,plain:true,paint:['#686e58','#a78d65','#643d36','#c8c3aa']},
+ {retro:true,id:'ventura',name:'Ventura lowrider coupe',width:1.98,length:5.35,height:1.33,wheelbase:3.02,cabin:[-1.03,-.61,.87,1.48],roof:1.33,body:.89,lights:'square',retro:true,coupe:true,lowrider:true,paint:['#643b58','#377d78','#9b572f','#4774a0']},
+ {retro:true,id:'stallion',name:'Ironwood muscle coupe',width:1.94,length:4.98,height:1.31,wheelbase:2.84,cabin:[-.78,-.35,.72,1.34],roof:1.31,body:.88,lights:'square',retro:true,coupe:true,muscle:true,paint:['#9b4e2c','#b49b48','#344d3e','#843733']},
+ {retro:true,id:'comet-gt',name:'Kestrel GT coupe',width:1.83,length:4.48,height:1.24,wheelbase:2.55,cabin:[-.98,-.37,.62,1.26],roof:1.24,body:.79,lights:'small',coupe:true,sport:true,spoiler:true,paint:['#b33232','#d6d1b7','#2e536c','#c39936']},
+ {retro:true,id:'commodore',name:'Holden Commodore VN',width:1.81,length:4.85,height:1.40,wheelbase:2.73,cabin:[-1.10,-.57,.87,1.55],roof:1.43,body:.88,lights:'wide',paint:['#8d2637','#e7e4dc','#284843','#29364e'],spoiler:true},
+ {retro:true,id:'falcon',name:'Ford Falcon EB',width:1.86,length:4.95,height:1.43,wheelbase:2.79,cabin:[-1.12,-.51,.91,1.57],roof:1.46,body:.91,lights:'wide',paint:['#41616c','#e1d9bf','#6f2c38','#b6bcc0']},
+ {retro:true,id:'skyline',name:'Nissan Skyline R32',width:1.70,length:4.55,height:1.34,wheelbase:2.61,cabin:[-1.00,-.49,.72,1.26],roof:1.35,body:.82,lights:'round',paint:['#38404b','#b6bcc2','#edece4','#283957'],spoiler:true},
+ {retro:true,id:'corolla',name:'Toyota Corolla AE92 hatch',width:1.66,length:4.04,height:1.38,wheelbase:2.43,cabin:[-.93,-.48,.96,1.65],roof:1.42,body:.85,lights:'small',paint:['#d9d5c9','#8b343b','#627c85','#b4b8ad'],hatch:true},
+ {retro:true,id:'hilux',name:'Toyota Hilux LN106',width:1.69,length:4.70,height:1.78,wheelbase:2.85,cabin:[-1.14,-.89,.18,.29],roof:1.83,body:1.03,lights:'square',paint:['#d9d5c4','#a64238','#405d72','#e6e6dd'],ute:true},
+ {retro:true,id:'legacy',name:'Subaru Legacy BG wagon',width:1.69,length:4.60,height:1.47,wheelbase:2.63,cabin:[-1.03,-.52,1.47,1.94],roof:1.50,body:.85,lights:'small',paint:['#35554e','#b8bbc0','#e5e1d8','#35465e'],wagon:true},
+ {retro:true,id:'magna',name:'Mitsubishi Magna TR wagon',width:1.78,length:4.80,height:1.49,wheelbase:2.72,cabin:[-1.10,-.57,1.67,2.07],roof:1.51,body:.91,lights:'wide',paint:['#bcb7aa','#d8d5c9','#7d9295','#8c4545'],wagon:true,plain:true},
+ {retro:true,id:'lancer',name:'Mitsubishi Lancer wagon',width:1.67,length:4.31,height:1.46,wheelbase:2.50,cabin:[-.93,-.49,1.48,1.91],roof:1.48,body:.86,lights:'small',paint:['#d9d9cc','#a8adb0','#697e83','#b1a28c'],wagon:true,plain:true,verticalRear:true},
+ {retro:true,id:'corolla-wagon',name:'Toyota Corolla AE100 wagon',width:1.68,length:4.27,height:1.46,wheelbase:2.46,cabin:[-.96,-.53,1.43,1.89],roof:1.47,body:.87,lights:'small',paint:['#d7d2be','#c0c4c3','#e4e3d9','#738c87'],wagon:true,plain:true,verticalRear:true},
+ {retro:true,id:'caldina',name:'Toyota Caldina T190 wagon',width:1.70,length:4.55,height:1.48,wheelbase:2.58,cabin:[-1.02,-.55,1.54,1.99],roof:1.50,body:.89,lights:'wide',paint:['#b9bfc0','#dbd8ce','#4f6862','#788694'],wagon:true,plain:true},
+ {retro:true,id:'hiace',name:'Toyota Hiace van',width:1.79,length:4.70,height:2.05,wheelbase:2.59,cabin:[-2.2,-2,1.9,2.2],roof:2.05,body:1.1,paint:['#e4e2d9','#bfc3c3','#b6ae97','#597889'],van:true},
+ {retro:true,id:'l300',name:'Mitsubishi L300 van',width:1.69,length:4.29,height:1.95,wheelbase:2.24,cabin:[-2,-1.8,1.7,2],roof:1.95,body:1.06,paint:['#d8d6c9','#b9c4c5','#bfad8f','#8e4942'],van:true,panel:true},
+ {retro:true,id:'city-bus',name:'Valley city bus',width:2.45,length:10.5,height:3.05,wheelbase:5.30,cabin:[-5,-4.8,4.8,5],roof:3.05,body:1.35,paint:['#d9d5bd','#c5d4ce','#d3d9df','#bdc9bd'],bus:true,acceleration:3,topSpeed:21},
+ {retro:true,id:'school-bus',name:'Valley school bus',width:2.40,length:8.7,height:2.90,wheelbase:4.45,cabin:[-4,-3.8,3.8,4],roof:2.90,body:1.32,paint:['#d9b94f','#ded2a8','#c6b669','#dfd8ba'],bus:true,school:true,acceleration:3.4,topSpeed:20}
 ];
 function merged(parts){const positions=[],normals=[],uv=[];for(const original of parts){const g=original.index?original.toNonIndexed():original;positions.push(...g.attributes.position.array);normals.push(...g.attributes.normal.array);if(g.attributes.uv)uv.push(...g.attributes.uv.array);else for(let i=0;i<g.attributes.position.count;i++)uv.push(0,0);if(g!==original)g.dispose();original.dispose()}const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.setAttribute('normal',new T.Float32BufferAttribute(normals,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.computeBoundingSphere();return geometry}
 export function classicGeometry(m,detail=1){
+ const parts=buildClassicGeometry(m,detail),floor=m.bus?.76:m.van?.53:m.ute?.55:.32,tyre=m.bus?.49:m.van?.35:m.ute?.41:.315;
+ const plates=[],plate=(width,z0,z1)=>{if(z1<=z0)return;const g=new T.BoxGeometry(width,.075,z1-z0);g.translate(0,floor-.045,(z0+z1)/2);plates.push(g)};
+ // A continuous chassis plus full-width floor panels between the wheel wells, in both LODs.
+ const front=-m.length/2+.08,rear=m.length/2-.08,axle=m.wheelbase/2,well=tyre+.07;
+ plate(m.width-.56,front,rear);
+ for(const [lo,hi] of [[front,-axle-well],[-axle+well,axle-well],[axle+well,rear]])plate(m.width-.12,lo,hi);
+ parts.dark=merged([...(parts.dark?[parts.dark]:[]),...plates]);return parts;
+}
+function buildClassicGeometry(m,detail=1){
  if(detail&&!m.van&&!m.bus)return withVehicleInterior(realisticCarGeometry(m),m);
  const parts={};const add=(kind,g,x=0,y=0,z=0,rx=0,ry=0,rz=0)=>{g.rotateX(rx);g.rotateY(ry);g.rotateZ(rz);g.translate(x,y,z);(parts[kind]??=[]).push(g)};
  const box=(kind,w,h,d,x,y,z)=>{
@@ -86,7 +99,7 @@ export function classicGeometry(m,detail=1){
  }
 
  // Tapered nose/tail, a bevelled shoulder and genuine open wheel arches.
- const tyre=m.ute?.41:.32,rim=m.ute?.23:.205,bottom=.39+ride,arch=tyre+.045;
+ const tyre=m.ute?.41:.32,rim=m.ute?.23:.205,bottom=.25+ride,arch=tyre+.045;
  const sections=[[front,.91,b-.055],[front+.20,.98,b-.025],[c0-.10,1,b+.015],...(m.ute?[[.45,1,b+.015]]:[]),[Math.max(c3+.10,m.ute?rear-.18:c3+.10),1,b+.015],[rear-.08,.96,b-.025],[rear,.91,b-.055]].sort((a,b)=>a[0]-b[0]);
  const widthAt=z=>{let i=0;while(i<sections.length-2&&z>sections[i+1][0])i++;const a=sections[i],q=sections[i+1],t=T.MathUtils.clamp((z-a[0])/(q[0]-a[0]||1),0,1);return w*T.MathUtils.lerp(a[1],q[1],t)};
  for(const side of [-1,1]){
@@ -113,11 +126,11 @@ export function classicGeometry(m,detail=1){
   panel('glass',side===1?[a,q,v,d]:[d,v,q,a]);
   strut('dark',a,q,.09);strut('paint',a,q,.065);strut('paint',d,[v[0],v[1]-.035,v[2]],.07,m.wagon?.13:.17);
   strut('dark',q,v,.045);strut('dark',a,d,.035);
-  const divider=m.ute?(c1+c2)*.5:c1+(c2-c1)*.48;
+  const divider=m.ute?(c1+c2)*.5:c1+(c2-c1)*(m.coupe?.68:.48);
   strut('dark',[side*beltX,b+.025,divider],[side*roofX,glassTop,divider],.075);
   if(m.wagon)strut('paint',[side*beltX,b+.025,c2-.30],[side*roofX,glassTop,c2-.30],.065);
   box('dark',.02,.055,c3-c0,side*(w/2+.006),b-.19,(c0+c3)/2);
-  for(const z of m.ute?[-.3]:[divider-.18,Math.min(c3-.25,divider+.87)]){
+  for(const z of m.ute?[-.3]:m.coupe?[divider-.18]:[divider-.18,Math.min(c3-.25,divider+.87)]){
    box('dark',.024,.065,.21,side*(w/2+.012),b-.10,z);
    box('chrome',.035,.026,.145,side*(w/2+.024),b-.09,z);
    strut('dark',[side*(widthAt(z+.24)/2+.004),bottom+.06,z+.24],[side*(widthAt(z+.24)/2+.004),b-.05,z+.24],.007,.007);
@@ -147,7 +160,7 @@ export function classicGeometry(m,detail=1){
   for(const side of [-1,1])box('dark',.12,.28,.16,side*(w/2-.13),.36,rear-.72);
  }
  for(const side of [-1,1])for(const z of [-m.wheelbase/2,m.wheelbase/2])wheel(tyre,rim,side,z,m.plain||m.ute);
- box('dark',w*.91,.18,.11,0,.47+ride,front-.025);box('dark',w*.91,.17,.11,0,.47+ride,rear+.025);
+ box(m.retro?'chrome':'dark',w*.96,.19,.16,0,.47+ride,front-.025);box(m.retro?'chrome':'dark',w*.96,.18,.16,0,.47+ride,rear+.025);
  box('dark',w*.39,.16,.04,0,b-.13,front-.045);
  for(let j=0;j<3;j++)box('chrome',w*.34,.016,.045,0,b-.18+j*.045,front-.07);
  box('plate',.38,.12,.018,0,.50+ride,front-.087);box('plate',.38,.12,.018,0,.52+ride,rear+.087);
@@ -165,7 +178,7 @@ export function classicGeometry(m,detail=1){
 function vehicleLampMaterial(material,kind){material.onBeforeCompile=shader=>{shader.vertexShader='attribute vec3 vehicleLamps;varying vec3 vVehicleLamps;varying float vVehicleLampSide;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvVehicleLamps=vehicleLamps;vVehicleLampSide=position.x;');shader.fragmentShader='varying vec3 vVehicleLamps;varying float vVehicleLampSide;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+(kind==='rear'?'totalEmissiveRadiance+=vec3(1.,.008,.003)*vVehicleLamps.x*2.2;':'totalEmissiveRadiance+=vec3(1.,.24,.008)*(vVehicleLampSide<0.?vVehicleLamps.y:vVehicleLamps.z)*2.5;'))};material.customProgramCacheKey=()=> 'vehicle-lamps-50-'+kind}
 export function createClassicFleet(scene,cars,{maxDistance=Infinity}={}){
  const environment=vehicleEnvironment(),headLens=vehicleLensTexture('front'),tailLens=vehicleLensTexture('rear'),turnLens=vehicleLensTexture('amber');
- const materials={stripe:new T.MeshLambertMaterial({color:'#2c695e'}),sign:new T.MeshBasicMaterial({color:'#e2c876'}),paint:new T.MeshPhysicalMaterial({color:'#ffffff',metalness:.42,roughness:.30,clearcoat:.8,clearcoatRoughness:.19,envMap:environment,envMapIntensity:.8}),glass:new T.MeshStandardMaterial({color:'#849da4',metalness:.08,roughness:.10,envMap:environment,envMapIntensity:.35,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide,forceSinglePass:true}),rubber:new T.MeshStandardMaterial({color:'#181b1d',roughness:.92}),chrome:new T.MeshStandardMaterial({color:'#b5b8ba',metalness:.92,roughness:.24,envMap:environment}),dark:new T.MeshLambertMaterial({color:'#283038'}),front:new T.MeshStandardMaterial({color:'#b9c1c0',map:headLens,emissiveMap:headLens,metalness:.12,roughness:.22,envMap:environment,envMapIntensity:.75,emissive:'#fff0c5',emissiveIntensity:0}),rear:new T.MeshStandardMaterial({color:'#a51624',map:tailLens,emissiveMap:tailLens,roughness:.20,envMap:environment,emissive:'#c62f34',emissiveIntensity:0}),amber:new T.MeshStandardMaterial({color:'#b48034',map:turnLens,roughness:.23,envMap:environment}),plate:new T.MeshStandardMaterial({color:'#ffffff',map:vehiclePlateTexture(),roughness:.55})};
+ const materials={whitewall:new T.MeshLambertMaterial({color:'#d9d4bd'}),stripe:new T.MeshLambertMaterial({color:'#2c695e'}),sign:new T.MeshBasicMaterial({color:'#e2c876'}),paint:new T.MeshPhysicalMaterial({color:'#ffffff',metalness:.28,roughness:.40,clearcoat:.45,clearcoatRoughness:.28,envMap:environment,envMapIntensity:.8}),glass:new T.MeshStandardMaterial({color:'#849da4',metalness:.08,roughness:.10,envMap:environment,envMapIntensity:.35,transparent:true,opacity:.30,depthWrite:false,side:T.DoubleSide,forceSinglePass:true}),rubber:new T.MeshStandardMaterial({color:'#181b1d',roughness:.92}),chrome:new T.MeshStandardMaterial({color:'#b5b8ba',metalness:.92,roughness:.24,envMap:environment}),dark:new T.MeshLambertMaterial({color:'#283038'}),front:new T.MeshStandardMaterial({color:'#b9c1c0',map:headLens,emissiveMap:headLens,metalness:.12,roughness:.22,envMap:environment,envMapIntensity:.75,emissive:'#fff0c5',emissiveIntensity:0}),rear:new T.MeshStandardMaterial({color:'#a51624',map:tailLens,emissiveMap:tailLens,roughness:.20,envMap:environment,emissive:'#c62f34',emissiveIntensity:0}),amber:new T.MeshStandardMaterial({color:'#b48034',map:turnLens,roughness:.23,envMap:environment}),plate:new T.MeshStandardMaterial({color:'#ffffff',map:vehiclePlateTexture(),roughness:.55})};
  vehicleLampMaterial(materials.rear,'rear');vehicleLampMaterial(materials.amber,'amber');
  const distantGlass=new T.MeshStandardMaterial({color:'#243038',metalness:.32,roughness:.12,envMap:environment});
  materials.cabin=new T.MeshStandardMaterial({color:'#303536',roughness:.88});materials.upholstery=new T.MeshStandardMaterial({color:'#74746a',roughness:.98});materials.instruments=new T.MeshStandardMaterial({color:'#ffffff',map:instrumentTexture(),roughness:.8});

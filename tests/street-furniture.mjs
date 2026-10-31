@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as T from '../dist/vendor/three.js';
+import {regionalMap} from '../scripts/lib/map-source.mjs';
 import {buildJunctions} from '../dist/road-grades.js';
 import {roadIndex,projectSegment} from '../dist/road-topology.js';
 import {insideFootprint} from '../dist/road-clipping.js';
 import {planStreetFurniture,createStreetFurniture,streetLabel,streetServiceStyle} from '../dist/street-furniture.js';
-const source=JSON.parse(fs.readFileSync(new URL('../dist/regional-map.json',import.meta.url),'utf8'));
+const source=regionalMap();
 const roads=source.elements.filter(r=>['Short Street','Bledisloe Crescent'].includes(r.tags?.name)).map(r=>({...r,name:r.tags.name,type:r.tags.highway,width:6.4,pavementWidth:8.6,bridge:false,p:r.geometry.map(p=>Object.assign(new T.Vector2(p.x,p.z),{node:p.node}))}));
 const junctions=buildJunctions(roads),cells=roadIndex(roads),network={roads,junctions,height:()=>0,at(x,z){let best=null;for(const item of cells.get(Math.floor(x/50)+','+Math.floor(z/50))||[]){const h=projectSegment(item.r,item.i,x,z);if(!best||h.d<best.d)best=h}return best},junctionAt(x,z){return junctions.some(h=>insideFootprint(x,z,h.outline))}};
 const plan=planStreetFurniture(network);assert.ok(plan.poles.length>8);assert.ok(plan.links.length>3);assert.equal(streetLabel('Bledisloe Crescent'),'Bledisloe Cres');assert.equal(streetLabel('Short Street'),'Short St');

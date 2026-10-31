@@ -36,7 +36,7 @@ for area in data.get('forestAreas',[]):
  layer=Image.new('L',(fw,fh));ld=ImageDraw.Draw(layer);ld.polygon(image_points(area[0],fw,fh),fill=255)
  for ring in area[1:]:ld.polygon(image_points(ring,fw,fh),fill=0)
  wood=Image.fromarray(np.maximum(np.array(wood),np.array(layer)));wd=ImageDraw.Draw(wood)
-photoCanvas=Image.new('RGB',(fw,fh),(200,200,200));oldW=round(16000/(m['maxX']-m['minX'])*fw);oldH=round(20500/(m['maxZ']-m['minZ'])*fh);photoCanvas.paste(Image.open(ROOT/'dist/regional-aerial.jpg').resize((oldW,oldH)).convert('RGB'),(0,0));photo=np.asarray(photoCanvas,dtype=float);r,g,b=photo[:,:,0],photo[:,:,1],photo[:,:,2]
+photoCanvas=Image.new('RGB',(fw,fh),(200,200,200));oldW=round(16000/(m['maxX']-m['minX'])*fw);oldH=round(20500/(m['maxZ']-m['minZ'])*fh);photoCanvas.paste(Image.open(ROOT/'dist/regional-aerial.jpg').resize((oldW,oldH)).convert('RGB'),(round((-10500-m['minX'])/(m['maxX']-m['minX'])*fw),round((-11500-m['minZ'])/(m['maxZ']-m['minZ'])*fh)));photo=np.asarray(photoCanvas,dtype=float);r,g,b=photo[:,:,0],photo[:,:,1],photo[:,:,2]
 terrain=np.frombuffer((ROOT/'dist/regional-terrain.bin').read_bytes(),dtype='<i4').reshape(m['height'],m['width'])/100
 sample=np.array(Image.fromarray(terrain.astype('float32')).resize((fw,fh)));dz,dx=np.gradient(sample,(m['maxZ']-m['minZ'])/fh,(m['maxX']-m['minX'])/fw);slope=np.hypot(dx,dz)
 evidence=(g>r*.95)&(g>b*1.06)&((r+g+b)/3<140)&(sample>20)&(slope>.15)

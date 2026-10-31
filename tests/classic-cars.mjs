@@ -5,6 +5,16 @@ import {createDriving} from '../dist/driving.js';
 const shapes=[];
 for(const id of ['magna','lancer','corolla-wagon','caldina']){const model=CLASSICS.find(m=>m.id===id);assert.ok(model?.wagon&&model.plain&&!model.spoiler,'Everyday wagons use plain trim');}
 for(const model of CLASSICS){const parts=classicGeometry(model);assert.ok(parts.paint&&parts.glass&&parts.front&&parts.rear);for(const geometry of Object.values(parts)){assert.ok([...geometry.attributes.position.array].every(Number.isFinite));assert.equal(geometry.attributes.position.count,geometry.attributes.normal.count);geometry.computeBoundingBox()}const bounds=parts.paint.boundingBox;assert.ok(bounds.max.y>model.roof-.1);assert.ok(bounds.max.x-bounds.min.x>=model.width-.03);shapes.push(parts.paint.attributes.position.count+':'+bounds.max.z+':'+bounds.max.y);if(model.ute){assert.ok(parts.glass.boundingBox.max.z<.4,'Hilux cabin is in front of open tray')}if(model.wagon)assert.ok(parts.glass.boundingBox.max.z>1.8,'Wagon glazing reaches rear');}
+// Floors remain solid from above and below, including the distant traffic models.
+for(const model of CLASSICS)for(const detail of [0,1]){
+ const parts=classicGeometry(model,detail),floor=model.bus?.76:model.van?.53:model.ute?.55:.32;
+ const material=new T.MeshBasicMaterial(),mesh=new T.Mesh(parts.dark,material);mesh.updateMatrixWorld();
+ for(const z of [-model.length/2+.20,0,model.length/2-.20])for(const direction of [-1,1]){
+  const ray=new T.Raycaster(new T.Vector3(0,floor-direction*.18,z),new T.Vector3(0,direction,0),0,.35);
+  assert.ok(ray.intersectObject(mesh).length,model.name+' has a solid floor at LOD '+detail);
+ }
+ for(const g of Object.values(parts))g.dispose();material.dispose();
+}
 // Close cabins have furniture and a clear opening below the window belt; far LODs omit it.
 for(const model of CLASSICS){const detail=classicGeometry(model),far=classicGeometry(model,0);assert.ok(detail.cabin&&detail.upholstery&&detail.instruments,model.name+' has a furnished cabin');assert.ok(!far.cabin&&!far.upholstery,'Distant vehicles omit interiors');if(!model.van&&!model.bus){const body=new T.Mesh(detail.paint,new T.MeshBasicMaterial({side:T.DoubleSide}));body.updateMatrixWorld();const ray=new T.Raycaster(new T.Vector3(0,model.body+.11,(model.cabin[0]+model.cabin[3])/2),new T.Vector3(0,-1,0),0,.30);assert.equal(ray.intersectObject(body).length,0,'No opaque body deck seals the cabin');body.material.dispose()}else{const belt=model.bus?1.43:1.04,n=model.bus?(model.school?6:8):3,start=-model.length/2+(model.bus?1:.17),step=(model.length/2-.20-start)/n,mesh=new T.Mesh(detail.paint,new T.MeshBasicMaterial({side:T.DoubleSide}));mesh.updateMatrixWorld();const ray=new T.Raycaster(new T.Vector3(model.width/2+.15,(belt+model.roof-.22)/2,start+step/2),new T.Vector3(-1,0,0),0,.25);assert.equal(ray.intersectObject(mesh).length,0,'Van and bus windows have real body openings');mesh.material.dispose()}for(const g of [...Object.values(detail),...Object.values(far)])g.dispose()}
 // An actual ray through each wheel opening must clear the painted body on both sides.

@@ -12,3 +12,9 @@ body:not(.playing) .grain{background:linear-gradient(90deg,#102f494d,transparent
 .weather-status{font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-top:9px;opacity:.8}.weather-settings{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:18px 0;font-size:11px;letter-spacing:.12em}.weather-settings select{background:#253f45;color:#e8efdf;border:1px solid #91a699;padding:9px;font:inherit}.shadow-option{display:flex;align-items:center;gap:5px;letter-spacing:.04em}.shadow-option input{accent-color:#d5df8c}
 
 #bus-job{position:absolute;left:30px;bottom:76px;max-width:min(520px,calc(100vw - 60px));padding:14px 18px;background:#172c30ed;border-left:4px solid #f0d66e;color:#f5f1d7;white-space:pre-line;font:13px/1.65 sans-serif;pointer-events:none}#bus-job[hidden]{display:none}.bus-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:650px;margin:16px 0}.bus-actions button{padding:10px 16px;font-size:11px}.bus-actions small{width:100%;margin:0!important}#pause{justify-content:flex-start}#pause>h2{margin-top:20px}@media(max-width:650px){#bus-job{left:12px;bottom:176px;font-size:11px;max-width:calc(100vw - 24px)}}
+
+.sky-date{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;margin:8px 0;color:inherit}.sky-date input{min-width:0;max-width:135px;background:#14212b;color:inherit;border:1px solid #ffffff30;padding:4px;font:inherit;color-scheme:dark}
+
+#interior-action{position:fixed;z-index:20;bottom:115px;left:50%;transform:translateX(-50%);padding:12px 20px;border:1px solid #efd399;background:#172a28ed;color:#f4e2b5;font:700 13px monospace;cursor:pointer;max-width:85vw}#interior-action[hidden]{display:none}
+
+#interior-hint{display:none}#interior-action{border:1px solid #b6c9a655;box-shadow:none;color:#e0e8d8;padding:8px 12px;font-size:11px;background:#172a28d9}

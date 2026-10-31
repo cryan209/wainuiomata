@@ -20,7 +20,7 @@ for b in buildings:
    groups.setdefault((ix,iz),[]).append(b)
 def build(item):
  (ix,iz),parts=item;size=2048 if abs((ix+.5)*SPAN)<1152 and abs((iz+.5)*SPAN)<1152 else 1024
- name=f'{ix}_{iz}.jpg';target=OUT/name;path=CACHE/f'{ix}_{iz}_{size}.jpg'
+ name=f'{ix}_{iz}.webp';target=OUT/name;path=CACHE/f'{ix}_{iz}_{size}.jpg'
  if not target.exists():
   left=ox+ix*SPAN;top=oy-iz*SPAN
   if not path.exists():
@@ -31,7 +31,7 @@ def build(item):
   for b in parts:
    points=[((x-ix*SPAN)/SPAN*size,(z-iz*SPAN)/SPAN*size) for x,z in b['rings'][0]];draw.polygon(points,fill=255);draw.line(points+[points[0]],fill=255,width=2*math.ceil(3/SPAN*size)+1,joint='curve')
   # Keep overhang/parallax padding around outlines without retaining entire gardens.
-  blank=Image.new('RGB',(size,size),'#747b7c');blank.paste(image,(0,0),mask);temporary=target.with_suffix('.part.jpg');blank.save(temporary,quality=92,optimize=True);temporary.replace(target)
+  blank=Image.new('RGB',(size,size),'#747b7c');blank.paste(image,(0,0),mask);temporary=target.with_suffix('.part.webp');blank.save(temporary,'WEBP',quality=78,method=5);temporary.replace(target)
  return{'id':f'{ix},{iz}','image':'roof-detail/'+name,'minX':ix*SPAN,'minZ':iz*SPAN,'maxX':(ix+1)*SPAN,'maxZ':(iz+1)*SPAN,'width':size,'height':size,'metresPerPixel':SPAN/size}
 tiles=[]
 with concurrent.futures.ThreadPoolExecutor(6) as pool:
@@ -40,4 +40,4 @@ with concurrent.futures.ThreadPoolExecutor(6) as pool:
   if i%20==0:print('Roof detail',i+1,'/',len(groups),flush=True)
 metadata={'span':SPAN,'tiles':tiles,'service':SERVICE,'source':'Hutt City 2025 aerial orthophotography; urban capture 29 March 2025, rural 2021','licence':'CC BY 4.0','attribution':'© NZ Aerial Surveys / Hutt City Council; rural imagery AAM NZ Ltd / Greater Wellington Regional Council. Cropped, roof-masked and mapped onto derived geometry.'}
 (ROOT/'dist/roof-detail.json').write_text(json.dumps(metadata,separators=(',',':')))
-print('Saved',len(tiles),'roof tiles;',round(sum(p.stat().st_size for p in OUT.glob('*.jpg'))/1024**2,1),'MiB',flush=True)
+print('Saved',len(tiles),'roof tiles;',round(sum(p.stat().st_size for p in OUT.glob('*.webp'))/1024**2,1),'MiB',flush=True)

@@ -8,8 +8,8 @@ export function realisticCarGeometry(m){
  const rounded=(k,x,y,z,sx,sy,sz,r=.015)=>{r=Math.min(r,sx/3,sy/3,sz/3);const s=new T.Shape(),hw=sx/2-r,hh=sy/2-r;s.moveTo(-hw,-hh-r);s.lineTo(hw,-hh-r);s.quadraticCurveTo(hw+r,-hh-r,hw+r,-hh);s.lineTo(hw+r,hh);s.quadraticCurveTo(hw+r,hh+r,hw,hh+r);s.lineTo(-hw,hh+r);s.quadraticCurveTo(-hw-r,hh+r,-hw-r,hh);s.lineTo(-hw-r,-hh);s.quadraticCurveTo(-hw-r,-hh-r,-hw,-hh-r);const g=new T.ExtrudeGeometry(s,{depth:sz-2*r,steps:1,bevelEnabled:true,bevelSize:r*.35,bevelThickness:r,bevelSegments:2,curveSegments:3});g.translate(0,0,-sz/2+r);add(k,g,x,y,z);return g};
  const tube=(k,points,r=.003)=>add(k,new T.TubeGeometry(new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p))),Math.max(3,points.length*2),r,5,false));
  const sphere=(k,x,y,z,sx,sy,sz)=>{const g=new T.SphereGeometry(1,14,8);g.scale(sx,sy,sz);add(k,g,x,y,z)};
- const stations=[[F,.90,b-.035],[F+.07,.96,b-.012],[F+.27,.995,b+.015],[F+.60,1,b+.025],[R-.50,1,b+.025],[R-.20,.98,b+.015],[R-.05,.91,b-.005],[R,.90,b-.025]];
- const section=z=>{let i=0;while(i<stations.length-2&&z>stations[i+1][0])i++;const q=stations[i],n=stations[i+1],t=T.MathUtils.smoothstep(z,q[0],n[0]);return{half:w/2*T.MathUtils.lerp(q[1],n[1],t),h:T.MathUtils.lerp(q[2],n[2],t)}};
+ const stations=[[F,m.retro?.97:.90,b-.035],[F+.07,m.retro?.99:.96,b-.012],[F+.27,.995,b+.015],[F+.60,1,b+.025],[R-.50,1,b+.025],[R-.20,.98,b+.015],[R-.05,m.retro?.97:.91,b-.005],[R,m.retro?.97:.90,b-.025]];
+ const section=z=>{let i=0;while(i<stations.length-2&&z>stations[i+1][0])i++;const q=stations[i],n=stations[i+1],t=m.retro?T.MathUtils.clamp((z-q[0])/(n[0]-q[0]),0,1):T.MathUtils.smoothstep(z,q[0],n[0]);return{half:w/2*T.MathUtils.lerp(q[1],n[1],t),h:T.MathUtils.lerp(q[2],n[2],t)}};
  const cut=z=>{let h=bottom;for(const wheel of [-m.wheelbase/2,m.wheelbase/2]){const dz=z-wheel;if(Math.abs(dz)<arch)h=Math.max(h,tyre+Math.sqrt(arch*arch-dz*dz))}return h};
  const zs=[...stations.map(s=>s[0]),...Array.from({length:49},(_,i)=>F+L*i/48)];for(const z of [-m.wheelbase/2,m.wheelbase/2])for(let j=0;j<=20;j++)zs.push(z+arch*Math.cos(Math.PI*j/20));zs.sort((a,b)=>a-b);const zlist=[...new Set(zs.map(z=>Math.round(z*1e6)/1e6))].filter(z=>z>=F&&z<=R);
  const zAt=u=>{const n=u*(zlist.length-1),i=Math.min(zlist.length-2,Math.floor(n));return T.MathUtils.lerp(zlist[i],zlist[i+1],n-i)};
@@ -28,10 +28,10 @@ export function realisticCarGeometry(m){
   surface('glass',16,6,(u,v)=>windowPoint(side,u,v),side===1);
   // Thin flush frames follow the glass; they do not project as square beams.
   for(const [end,width,kind]of [[0,.035,'paint'],[1,m.wagon?.085:.12,'paint']])surface(kind,2,12,(u,v)=>{const q=windowPoint(side,end===0?u*width/(d-a):1-u*width/(d-a),v);q[0]+=side*.004;return q},side===-1&&end===0||side===1&&end===1);
-  const div=m.ute?.62:.47;surface('dark',2,10,(u,v)=>{const q=windowPoint(side,div+(u-.5)*.018,v);q[0]+=side*.005;return q},side===1);
+  const div=m.ute?.62:m.coupe?.68:.47;surface('dark',2,10,(u,v)=>{const q=windowPoint(side,div+(u-.5)*.018,v);q[0]+=side*.005;return q},side===1);
   if(m.wagon)surface('paint',2,10,(u,v)=>{const q=windowPoint(side,.80+(u-.5)*.022,v);q[0]+=side*.005;return q},side===1);
   tube('dark',Array.from({length:17},(_,i)=>windowPoint(side,i/16,0)),.009);
-  const doors=m.ute?[.54]:[.47,.88];for(const u of doors){const z=T.MathUtils.lerp(a,d,u),lo=cut(z)+.02,q=section(z);tube('dark',Array.from({length:9},(_,i)=>{const y=T.MathUtils.lerp(lo,q.h-.07,i/8),v=(y-cut(z))/(q.h-.065-cut(z));const p=sidePoint(side,z,v);p[0]+=side*.002;return p}),.002);
+  const doors=m.ute?[.54]:m.coupe?[.70]:[.47,.88];for(const u of doors){const z=T.MathUtils.lerp(a,d,u),lo=cut(z)+.02,q=section(z);tube('dark',Array.from({length:9},(_,i)=>{const y=T.MathUtils.lerp(lo,q.h-.07,i/8),v=(y-cut(z))/(q.h-.065-cut(z));const p=sidePoint(side,z,v);p[0]+=side*.002;return p}),.002);
    const y=b-.075,v=(y-cut(z))/(q.h-.065-cut(z)),p=sidePoint(side,z-.14,T.MathUtils.clamp(v,0,1));rounded(m.plain?'dark':'chrome',p[0]+side*.009,y,z-.14,.016,.026,.135,.006);
   }
   const mx=side*(w/2+.035);tube('dark',[[side*xb,belt+.05,a+.14],[mx,belt+.11,a+.22]],.015);sphere('paint',mx,belt+.12,a+.22,.084,.052,.105);sphere('chrome',mx+side*.076,belt+.12,a+.24,.007,.038,.074);
@@ -59,6 +59,7 @@ export function realisticCarGeometry(m){
   const rubber=new T.LatheGeometry(profile.map(p=>new T.Vector2(...p)),32);rubber.rotateZ(Math.PI/2);add('rubber',rubber,x,tyre,z);
   const disk=(kind,radius,xx,thickness=.012)=>{const g=new T.CylinderGeometry(radius,radius,thickness,24);g.rotateZ(Math.PI/2);add(kind,g,xx,tyre,z)};
   disk('dark',rim,x,.18);disk('chrome',rim*.80,face-side*.032);
+  if(m.lowrider){const whitewall=new T.RingGeometry(rim+.025,tyre-.035,24);whitewall.rotateY(side*Math.PI/2);add('whitewall',whitewall,face+side*.006,tyre,z)}
   const ring=new T.TorusGeometry(rim-.008,.011,6,32);ring.rotateY(Math.PI/2);add('chrome',ring,face,tyre,z);
   if(m.plain||m.ute){disk('chrome',rim-.022,face);for(let j=0;j<6;j++){const t=j*Math.PI/3;sphere('dark',face+side*.008,tyre+Math.cos(t)*rim*.64,z+Math.sin(t)*rim*.64,.003,.024,.033)}}
   else for(let j=0;j<5;j++){const t=j*Math.PI*2/5,g=rounded('chrome',0,0,0,.018,rim-.028,.032,.006);g.rotateX(t);g.translate(face,tyre+Math.cos(t)*rim*.48,z+Math.sin(t)*rim*.48)}
@@ -79,9 +80,9 @@ export function realisticCarGeometry(m){
    if(!m.verticalRear){lens('amber',side,rearX,b-.12,width,height,true,.76,.98);lens('chrome',side,rearX,b-.12,width,height,true,.04,.20)}
   }
  }
- const grilleW=w*(m.id==='skyline'?.23:.32);rounded('dark',0,lightY,F-.017,grilleW,.105,.028,.012);for(let j=0;j<2;j++)rounded('chrome',0,lightY-.025+j*.05,F-.034,grilleW-.035,.009,.008,.002);sphere('chrome',0,lightY,F-.045,.016,.021,.006);
+ const grilleW=w*(m.retro?.40:m.id==='skyline'?.23:.32);rounded('dark',0,lightY,F-.017,grilleW,.105,.028,.012);for(let j=0;j<2;j++)rounded('chrome',0,lightY-.025+j*.05,F-.034,grilleW-.035,.009,.008,.002);sphere('chrome',0,lightY,F-.045,.016,.021,.006);
  for(const [z,back]of [[F-.005,false],[R+.005,true]]){
-  const y=m.ute?.60:.44;rounded('paint',0,y,z,w*.91,.18,.14,.035);rounded('dark',0,y+.015,z+(back?.065:-.065),w*.88,.047,.025,.010);
+  const y=m.ute?.60:.44;rounded(m.retro?'chrome':'paint',0,y,z,w*(m.retro?.97:.91),m.retro?.20:.18,m.retro?.20:.14,m.retro?.012:.035);rounded('dark',0,y+.015,z+(back?.065:-.065),w*.88,.047,.025,.010);
   const plate=new T.PlaneGeometry(.365,.105);if(!back)plate.rotateY(Math.PI);add('plate',plate,0,back&&!m.ute?b-.16:y-.015,z+(back?.082:-.082));
  }
  sphere('chrome',0,b-.025,R+.016,.022,.015,.005);
@@ -90,6 +91,10 @@ export function realisticCarGeometry(m){
  rounded('dark',0,m.ute?.47:.325,F-.045,w*.32,.070,.035,.012);
  if(m.spoiler&&m.id==='skyline'){rounded('paint',0,b+.16,R-.29,w*.78,.045,.16,.014);for(const x of [-.48,.48])rounded('paint',x,b+.10,R-.29,.035,.10,.06,.009)}
  if(m.wagon&&!m.plain)for(const x of [-.53,.53])tube('dark',[[x,H+.012,-.35],[x,H+.045,.20],[x,H+.045,1.10],[x,H+.01,1.38]],.013);
+ // Original period archetypes: long chrome bumpers, muscle-car scoop and coupe doors.
+ if(m.muscle){rounded('paint',0,b+.082,F+.78,w*.36,.10,.65,.012);rounded('dark',0,b+.10,F+.45,w*.29,.045,.014,.003)}
+ if(m.sport){rounded('paint',0,.285,F+.035,w*.91,.10,.18,.015);rounded('paint',0,b+.15,R-.25,w*.82,.04,.18,.008);for(const x of [-.49,.49])rounded('paint',x,b+.09,R-.25,.035,.13,.05,.004)}
+ if(m.retro)for(const side of [-1,1]){rounded('chrome',side*(w/2+.003),b-.14,0,.018,.026,L-.65,.003);if(m.lowrider)rounded('chrome',side*(w/2+.004),.37,0,.018,.055,L-.72,.004)}
  const result={};for(const[k,items]of Object.entries(parts)){const pos=[],normal=[],uv=[];for(const source of items){const g=source.index?source.toNonIndexed():source;pos.push(...g.attributes.position.array);normal.push(...g.attributes.normal.array);if(g.attributes.uv)uv.push(...g.attributes.uv.array);else for(let i=0;i<g.attributes.position.count;i++)uv.push(0,0);if(g!==source)g.dispose();source.dispose()}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('normal',new T.Float32BufferAttribute(normal,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.computeBoundingSphere();result[k]=g}return result;
 }
 // A shared daylight reflection environment; no external textures or network requests.
