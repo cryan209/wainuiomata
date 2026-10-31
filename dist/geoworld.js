@@ -43,15 +43,19 @@ export async function loadWorld(scene){
  function originalGround(x,z){let f=meta.fine;if(x<f.minX||z<f.minZ||x>f.minX+(f.width-1)*f.step||z>f.minZ+(f.height-1)*f.step)return coarseHeight(x,z);const edge=Math.min(x-f.minX,z-f.minZ,f.minX+(f.width-1)*f.step-x,f.minZ+(f.height-1)*f.step-z);return T.MathUtils.lerp(coarseHeight(x,z),sample(fine,f,x,z),Math.min(1,edge/20))}
  function rawGround(x,z){const h=originalGround(x,z);return railways?railways.ground(x,z,h):h}
  railways=createRailways(scene,railData,{datum,textures});
+ await globalThis.loadingStage?.('Coastline and harbour');
  const coast=await createCoast(scene,coastMeta,regionalForest,{ground:rawGround,datum});
+ await globalThis.loadingStage?.('Rivers and streams');
  const hydro=createHydrology(scene,waterways,rawGround,{seaLevel:coast.seaLevel}),tunnels=createTunnels(scene,map,rawGround);
  // Regional photographs: a whole-region overview, then streamed 2m valley and 0.5m urban tiles (see prepare_regional_ground.py).
  const regionalGround=await fetchAsset('./ground-regional.json').then(r=>r.ok?r.json():null).catch(()=>null);let overviewLayer=[];
  if(regionalGround){const o=regionalGround.overview,texture=await new T.TextureLoader().loadAsync('./'+o.image);texture.colorSpace=T.SRGBColorSpace;texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.anisotropy=4;overviewLayer=[{texture,bounds:o,fade:20,blank:true,detail:.35}];const e=regionalGround.overviewOuter;if(e){const outer=await new T.TextureLoader().loadAsync('./'+e.image);outer.colorSpace=T.SRGBColorSpace;outer.minFilter=T.LinearMipmapLinearFilter;outer.anisotropy=4;overviewLayer.unshift({texture:outer,bounds:e,fade:150,blank:true,detail:.45})}}
  const groundDetail=createGroundDetail(await fetchAsset('./ground-detail.json').then(r=>r.json()),regionalGround);
  const aerialLayers=[...overviewLayer,{texture:wideTexture,bounds:wideImagery,fade:80},...groundDetail.valleyLayers,{texture:aerialTexture,bounds:roofImagery,fade:50},...groundDetail.layers];
+ await globalThis.loadingStage?.('Roads, bridges and tunnels');
  const network=createRoadNetwork(scene,map,hydro,rawGround,textures,tunnels?.applyTerrain,railways,{streamGeometry:{x:0,z:0,radius:1500},roadMaterialHook:(material,style)=>{if(style<5)applyRoadImagery(material,aerialLayers);applyNightLight(material)}}),{roads,nearest}=network;
  const ground=(x,z)=>network.ground(x,z);
+ await globalThis.loadingStage?.('Terrain');
  const terrain=createTerrainStream(scene,{bounds:regionalMeta,ground:(x,z)=>hydro.terrainGround(x,z,ground(x,z)),density:forestDensity,textures,materialHook:material=>{applyNightLight(material);tunnels?.applyTerrain(material);coast.applyTerrain(material);network.clipTerrain(material);applyGroundImagery(material,aerialLayers)}});
  await terrain.ensureAt(0,0);
  // Keep the surveyed meshes intact; vary only their surface appearance.
@@ -89,7 +93,9 @@ export async function loadWorld(scene){
  function walkHeight(x,z,y){const tunnel=y!==undefined?tunnels?.walkHeight(x,z,y):null;if(tunnel!==null&&tunnel!==undefined)return tunnel;const road=network.walkHeight(x,z,y),rail=railways.walkHeight(x,z,y);return rail===null||rail===undefined?road:y!==undefined&&Math.abs(road-(y-2))<=Math.abs(rail-(y-2))?road:rail}
  const fences=createPropertyFences(scene,{network,ground,hydro,coast,openSpaces,clear:(x,z)=>freeBuildings(x,z)&&region.free(x,z)});
  const fenceGroups=new Map();for(const b of buildings){const p=b.profile||facadeProfile(b),key='local-'+Math.floor(p.x/512)+','+Math.floor(p.z/512);if(!fenceGroups.has(key))fenceGroups.set(key,[]);fenceGroups.get(key).push(b)}for(const[id,parts]of fenceGroups)fences.addChunk(id,parts);
+ await globalThis.loadingStage?.('Trees and bush');
  const greenery=addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,tunnels,foliage,openSpaces,coast,railways});const forest=addHillsideForest(scene,{density:forestDensity,ground,network,freeBuildings,tunnels,foliage,openSpaces,coast,railways,hydro});
+ await globalThis.loadingStage?.('Wellington and Hutt buildings');
  const region=createRegionStream(scene,regionalBuildings,regionalFar,{ground,datum,textures,streets,network,coast,openSpaces,foliage,windowMaterials,photoMaterials,freeLocal:freeBuildings,railways,hydro,fences,roofFarData:regionalRoofFar});
  const regionalNearest=(x,z)=>{const hit=nearest(x,z);if(!coast.isLand(x,z)&&!network.onBridge(x,z))return{...hit,name:'Wellington Harbour'};if(hit.name!=='Wainuiomata'||Math.abs(x)<3150&&Math.abs(z)<3150)return hit;const place=[...coastMeta.places].sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0];return{...hit,name:place?.name||'Hutt Valley'}};
  return{meta,terrain,groundDetail,fences,ground:(x,z)=>coast.isLand(x,z)?ground(x,z):coast.seaLevel,rawGround,roads,buildings,nearest:regionalNearest,free,freeSpace,windowMaterials,photoMaterials,hydro,network,walkHeight,greenery,forest,tunnels,canopies,sideWindows,openSpaces,roofDetail,coast,region,foliage,railways,regionalMeta,bounds:regionalMeta.bounds};

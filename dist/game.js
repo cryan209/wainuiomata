@@ -2,7 +2,7 @@ import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js';
 import {createBusService} from './bus-service.js?v=textured-peds-70';
 import {createWaterWorld} from './water-world.js?v=audio-music-58';
-import {loadWorld} from './geoworld.js?v=roofs-85';
+import {loadWorld} from './geoworld.js?v=loading-92';
 import {createSound} from './sound.js?v=audio-86';
 import {createPerformanceHUD} from './performance.js?v=audio-music-58';
 import {addSky} from './textures.js';
@@ -25,6 +25,7 @@ let renderScale=1;const camera=new T.PerspectiveCamera(68,innerWidth/innerHeight
 $('#play').disabled=true;$('#play').textContent='LOADING THE VALLEY…';
 let world;
 try{world=await loadWorld(scene)}catch(e){$('#play').textContent='COULD NOT LOAD — REFRESH TO RETRY';$('#toast').textContent=e.message;$('#toast').style.opacity=1;throw e}
+await globalThis.loadingStage?.('Traffic, people and vehicles');
 const {ground,roads,nearest,free}=world;world.water=createWaterWorld(scene,world);const furniture=createStreetFurniture(scene,world),staticFree=world.free,staticSpace=world.freeSpace;world.freeSpace=(x,z,...args)=>staticSpace(x,z,...args)&&furniture.free(x,z);world.free=(x,z,...args)=>staticFree(x,z,...args)&&furniture.free(x,z);world.furniture=furniture;const traffic=createTraffic(scene,world.network,144,{parkingClear:furniture.parkingClear,physicsWorld:world,viewDirection:()=>camera.getWorldDirection(new T.Vector3())});world.traffic=traffic;const intersections=createIntersectionScenery(scene,world.network,traffic.rules,{clear:(x,z,y)=>world.free(x,z,y)});world.intersections=intersections;world.signImpact=(car,from,to)=>intersections.impact(car,from,to);const beforeControlsFree=world.free,beforeControlsSpace=world.freeSpace;world.free=(x,z,...args)=>beforeControlsFree(x,z,...args)&&intersections.free(x,z,args[0]);world.freeSpace=(x,z,...args)=>beforeControlsSpace(x,z,...args)&&intersections.free(x,z,args[0]);const people=createPeople(scene,world,traffic);world.people=people;const queen=roads.find(r=>r.name==='Queen Street');const start=queen.p[0].clone();
 const cycle=createDayNight({scene,renderer,camera,sky,sun,ambient,windowMaterials:world.windowMaterials,photoMaterials:world.photoMaterials});
 const sound=createSound({world});
@@ -43,6 +44,7 @@ function exitHeli(){const l=heli.exit(lastGround);if(!l)return false;camera.posi
 const bike=createBicycle({scene,world,camera,keys});
 function enterBike(){if(interiors.active)return;busService.cancel();exitHeli();driving.exit();if(aerial){aerial=false;const l=findLanding(world,camera.position.x,camera.position.z,lastGround);camera.position.set(l.x,world.walkHeight(l.x,l.z)+2,l.z)}bike.enter(camera.position,yaw);lastGround={x:camera.position.x,z:camera.position.z}}
 function exitBike(){const l=bike.exit();if(!l)return false;camera.position.set(l.x,world.walkHeight(l.x,l.z,bike.position.y+2)+2,l.z);yaw=l.yaw;pitch=0;lastGround={x:l.x,z:l.z};$('#flight-mode').textContent='ON FOOT';return true}
+await globalThis.loadingStage?.('Bus routes');
 const busService=await createBusService(scene,world,traffic,driving,$('#bus-job'));
 $('#play').disabled=false;$('#play').textContent='EXPLORE WAINUIOMATA ↗';
 async function startBusRoute(){interiors.exit();active=false;try{await busService.start();aerial=false;$('#travel').value='';play()}catch(e){$('#toast').textContent=e.message;$('#toast').style.opacity=1}}
