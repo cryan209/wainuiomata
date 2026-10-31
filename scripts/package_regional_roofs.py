@@ -1,15 +1,16 @@
 """Give every streamed regional building a stable footprint-aligned roof, and rewrite the far-view data to match.
 regional-far.bin (8 floats per building) and regional-roof-far.bin (rise, kind per building) are written together
 in chunk order, so they always have one row per building. Needs no downloads: run it after any expansion that adds
-buildings (expand_wellington.py, expand_upper_hutt.py, ...). prepare_regional_profiles.py calls it after its survey.
+buildings (expand_wellington.py, expand_upper_hutt.py, ...). Landmarks in regional_landmarks.py are applied first. prepare_regional_profiles.py calls it after its survey.
 Run with /private/tmp/wainui-gis/bin/python.
 """
 import pathlib,json,math
 import numpy as np
 from shapely.geometry import Polygon
+import regional_landmarks
 ROOT=pathlib.Path(__file__).resolve().parents[1];D=ROOT/'dist'
 def package(m,chunks,datum):
- far=[];farRoofs=[];kinds={}
+ regional_landmarks.apply(m,chunks);far=[];farRoofs=[];kinds={}
  for c in m['chunks']:
   data=chunks[c['id']]
   for b in data['buildings']:
@@ -23,6 +24,7 @@ def package(m,chunks,datum):
     kind='flat' if rise<.6 or b['height']>18 else 'gable' if p.area>650 or l/w>2.1 or int(b['id'])%3==0 else 'hip'
     if kind=='flat':rise=0
     roof.update(kind=kind,rise=round(rise,2),frame=[round(cx,3),round(cz,3),round(ux,6),round(uz,6),round(l,3),round(w,3)]);b['roof']=roof
+   if b.get('landmark'):cx,cz,ux,uz,l,w=roof['frame']
    roof['rise']=round(min(roof['rise'],6,w*.55),2)
    farRoofs.extend([roof['rise'],{'flat':0,'gable':1,'hip':2}[roof['kind']]])
    kinds[roof['kind']]=kinds.get(roof['kind'],0)+1
