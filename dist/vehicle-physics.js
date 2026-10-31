@@ -3,7 +3,7 @@ import {handlingFor,tyreSurface} from './vehicle-handling.js?v=physics-43';
 export function stepCar(car,keys,dt,world){
  const throttle=Number(!!(keys.w||keys.arrowup))-Number(!!(keys.s||keys.arrowdown)),steer=Number(!!(keys.d||keys.arrowright))-Number(!!(keys.a||keys.arrowleft)),m=car.model||{},p=car.position;
  const h=handlingFor(m),surface=tyreSurface(world,p.x,p.z),oldSpeed=car.velocity||0,v=Math.abs(oldSpeed),wb=m.wheelbase||2.65,track=(m.width||1.8)*.8,fx=-Math.sin(car.yaw),fz=-Math.cos(car.yaw),height=(along,side)=>world.walkHeight(p.x+fx*along+Math.cos(car.yaw)*side,p.z+fz*along-Math.sin(car.yaw)*side,p.y+2),fl=height(wb/2,-track/2),fr=height(wb/2,track/2),rl=height(-wb/2,-track/2),rr=height(-wb/2,track/2);
- const groundPitch=Math.atan2((fl+fr-rl-rr)/2,wb),groundRoll=Math.atan2((fr+rr-fl-rl)/2,track),slope=-9.81*Math.sin(groundPitch),grip=h.grip*surface.grip;
+ const groundPitch=Math.atan2((fl+fr-rl-rr)/2,wb),groundRoll=Math.atan2((fr+rr-fl-rl)/2,track),slope=-9.81*Math.sin(groundPitch),grip=h.grip*surface.grip*(1-Math.max(0,Math.min(1,world.weather?.rain||0))*.25);
  if(throttle)car.parkHold=false;
  // Space is the handbrake: the rear wheels lock and let go sideways, so steering into it swings the tail out. Throttle keeps a
  // rear-wheel-drive car sliding after release; otherwise grip returns and the slide straightens.

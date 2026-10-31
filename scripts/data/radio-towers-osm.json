@@ -1,0 +1,102 @@
+{
+  "license": "\u00a9 OpenStreetMap contributors, ODbL",
+  "retrieved": "2026-10-31",
+  "sites": {
+    "kaukau": {
+      "url": "https://api.openstreetmap.org/api/0.6/way/361818550/full.json",
+      "elements": [
+        {
+          "type": "node",
+          "id": 3662449461,
+          "lat": -41.2336365,
+          "lon": 174.7793765
+        },
+        {
+          "type": "node",
+          "id": 3662449463,
+          "lat": -41.2334138,
+          "lon": 174.7793778
+        },
+        {
+          "type": "node",
+          "id": 3662452985,
+          "lat": -41.2335184,
+          "lon": 174.7792302
+        },
+        {
+          "type": "node",
+          "id": 9232332327,
+          "lat": -41.2335285,
+          "lon": 174.7795235
+        },
+        {
+          "type": "way",
+          "id": 361818550,
+          "nodes": [
+            9232332327,
+            3662449463,
+            3662452985,
+            3662449461,
+            9232332327
+          ],
+          "tags": {
+            "communication:microwave": "yes",
+            "communication:radio": "yes",
+            "communication:television": "yes",
+            "height": "122",
+            "man_made": "tower",
+            "name": "Kaukau TV/FM transmitter",
+            "operator": "Kordia",
+            "ref:linz:hydrographic_id": "70648",
+            "seamark:light:category": "air_obstruction",
+            "seamark:light:character": "F",
+            "seamark:light:colour": "red",
+            "seamark:light:visibility": "low",
+            "seamark:type": "light_minor",
+            "source": "LINZ;Wellington Harbour Chart;Chart NZ4633",
+            "source:date": "2014-12-01",
+            "start_date": "1967",
+            "tower:construction": "lattice",
+            "tower:type": "communication"
+          }
+        }
+      ]
+    },
+    "fitzherbert": {
+      "url": "https://api.openstreetmap.org/api/0.6/node/2392530592.json",
+      "elements": [
+        {
+          "type": "node",
+          "id": 2392530592,
+          "lat": -41.2184116,
+          "lon": 174.9592245,
+          "tags": {
+            "communication:radio": "yes",
+            "communication:television": "yes",
+            "man_made": "tower",
+            "name": "Fitzherbert TV/FM transmitter",
+            "ref:linz:topo50_id": "2424807",
+            "tower:type": "communication"
+          }
+        }
+      ]
+    },
+    "victoria": {
+      "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=174.7954,-41.2968,174.7975,-41.2950",
+      "elements": [
+        {
+          "type": "node",
+          "id": 296684884,
+          "lat": -41.2960142,
+          "lon": 174.7966281,
+          "tags": {
+            "man_made": "tower",
+            "ref:linz:topo50_id": "7640592",
+            "tower:construction": "lattice",
+            "tower:type": "communication"
+          }
+        }
+      ]
+    }
+  }
+}

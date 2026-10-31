@@ -1,4 +1,4 @@
-import {hash,facadeStyle} from './appearance.js';
+import {hash,facadeStyle} from './appearance.js?v=large-houses-94';
 export function createStreetIndex(map){
  const cells=new Map();for(const r of map.elements){if(!['primary','secondary','tertiary','residential','unclassified','living_street','service','pedestrian'].includes(r.tags.highway)||r.tags.tunnel==='yes')continue;for(let i=1;i<r.geometry.length;i++){const a=r.geometry[i-1],b=r.geometry[i],segment={a,b,width:parseFloat(r.tags.width)||(['primary','secondary','tertiary'].includes(r.tags.highway)?11:r.tags.highway==='service'?4:7),name:r.tags.name||'',service:r.tags.highway==='service'};for(let x=Math.floor((Math.min(a.x,b.x)-90)/100);x<=Math.floor((Math.max(a.x,b.x)+90)/100);x++)for(let z=Math.floor((Math.min(a.z,b.z)-90)/100);z<=Math.floor((Math.max(a.z,b.z)+90)/100);z++){const k=x+','+z;if(!cells.has(k))cells.set(k,[]);cells.get(k).push(segment)}}}
  return{closest(x,z){let best=null;for(const s of cells.get(Math.floor(x/100)+','+Math.floor(z/100))||[]){const dx=s.b.x-s.a.x,dz=s.b.z-s.a.z,t=Math.max(0,Math.min(1,((x-s.a.x)*dx+(z-s.a.z)*dz)/(dx*dx+dz*dz||1))),px=s.a.x+t*dx,pz=s.a.z+t*dz,d=Math.hypot(px-x,pz-z),score=d+(s.service?12:0);if(!best||score<best.score)best={x:px,z:pz,d,width:s.width,name:s.name,score}}return best}};
@@ -14,6 +14,7 @@ export function buildingFaces(building,streets){
 }
 export function wallStyle(profile,id,face,bay,floor){
  if(profile.industrial)return 60+hash(id)%2;
+ if(profile.largeHouse&&!profile.shop)return 44+profile.style;
  if(!face||face.front)return facadeStyle(profile,id,(face?.id||0)*31+bay,floor?4:0);
  // Side/rear cladding stays continuous; inset window overlays are added separately.
  return profile.shop?60+hash(id)%2:44+profile.style;

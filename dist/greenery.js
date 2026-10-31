@@ -1,6 +1,6 @@
 import * as T from './vendor/three.js';
 import {createPines} from './pine-trees.js';
-import {vegetationClear} from './river-clearance.js';
+import {vegetationClear} from './river-clearance.js?v=cells-90';
 export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,tunnels,foliage,openSpaces,coast,railways}){
  let seed=1948;const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};const color=new T.Color(),dummy=new T.Object3D(),up=new T.Vector3(0,1,0);
  const leaves=['#c4d1b9','#ced8bd','#d6dcbf','#b9cbb9','#d9ddc5','#cbd8c1'];

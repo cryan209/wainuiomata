@@ -1,3 +1,4 @@
+import {buildHouse,selectHouseEntrances,houseStyles} from './house-interiors.js?v=house-interiors-95';
 import * as T from './vendor/three.js';
 import {buildSupermarket,matchSupermarket} from './supermarket.js';
 import {supermarketSites} from './supermarket-sites.js';
@@ -31,6 +32,7 @@ function sign(text,colour='#ead9aa',width=512){
  const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;map.magFilter=T.NearestFilter;return new T.MeshBasicMaterial({map,side:T.DoubleSide});
 }
 export function buildRoom(kind){
+ if(kind.startsWith('house-'))return buildHouse(kind);
  if(kind==='supermarket')return buildSupermarket();
  const scene=new T.Scene();scene.background=new T.Color('#18211e');const obstacles=[];
  const materials=new Map();const material=colour=>{if(!materials.has(colour))materials.set(colour,new T.MeshLambertMaterial({color:colour}));return materials.get(colour);};
@@ -93,6 +95,8 @@ export function createInteriors({scene,world,camera,origin,button,hint,onEntranc
  const styles=[['dairy','Valley Dairy'],['cafe','The Long Way Home Café'],['lounge','Valley Lounge'],['library','Valley Reading Room'],['arcade','Valley Arcade'],['takeaway','Valley Fish & Chips'],['workshop','Valley Cycle Works'],['music','Valley Records'],['florist','Valley Flowers']];
  const reserved=new Set(supermarketSites.map(site=>matchSupermarket(site,world.buildings)?.id).filter(id=>id!==undefined));
  const entrances=selectEntrances(world,origin,styles.length,{exclude:reserved}).map((entry,i)=>({...entry,kind:styles[i][0],name:styles[i][1]}));
+ const houseNames=['Rimu House','Kōwhai House','Tawa House','Kauri House','Rātā House','Mānuka House'];
+ const houseExclude=new Set([...reserved,...entrances.map(e=>e.buildingId)]);for(const [i,entry]of selectHouseEntrances(world,origin,6,{exclude:houseExclude,avoid:entrances}).entries())entrances.push({...entry,kind:houseStyles[i%houseStyles.length][0],name:houseNames[i]});
  const view=new T.PerspectiveCamera(camera.fov,camera.aspect,.08,90);view.rotation.order='YXZ';let current=null,near=null,saved=null,clock=0,scanAt=0;const beacons=[],rooms=new Map();
  const areaIds=['lowerhutt','petone','daysbay','eastbourne','upperhutt','silverstream','trentham','totara-park','wellington-cbd','wellington-cuba','oriental-bay','newtown','karori','island-bay','miramar','kilbirnie'];
  const destinations=world.coast&&world.network?regionalDestinations(world):new Map();
@@ -117,8 +121,9 @@ export function createInteriors({scene,world,camera,origin,button,hint,onEntranc
   }
  }
  function addEntrance(entry){
-  const door=new T.Group();door.position.set(entry.wallX,entry.y-2,entry.wallZ);door.rotation.y=Math.atan2(entry.nx,entry.nz);
+  const door=new T.Group();door.position.set(entry.wallX,entry.doorBase??entry.y-2,entry.wallZ);door.rotation.y=Math.atan2(entry.nx,entry.nz);
   // A modest shop door with a different painted panel for each interior.
+  if(!entry.residential){
   const colours=['#657e70','#826e56','#6d7780','#786c59','#68647e','#72857c','#686f61','#755f57','#788363'];
   const canvas=document.createElement('canvas');canvas.width=128;canvas.height=256;const c=canvas.getContext('2d');
   c.fillStyle=entry.kind==='supermarket'?'#677d64':colours[styles.findIndex(s=>s[0]===entry.kind)];c.fillRect(0,0,128,256);
@@ -127,9 +132,11 @@ export function createInteriors({scene,world,camera,origin,button,hint,onEntranc
   c.fillStyle='#c2b9a0';c.fillRect(104,158,5,27);
   const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;texture.magFilter=T.NearestFilter;
   const panel=new T.Mesh(new T.PlaneGeometry(1.5,2.4),new T.MeshLambertMaterial({map:texture,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));panel.position.set(0,1.2,.015);door.add(panel);
-  const frameMaterial=new T.MeshBasicMaterial({color:'#b6c9a6',transparent:true,opacity:.18,depthWrite:false});
-  for(const x of [-.79,.79]){const post=new T.Mesh(new T.BoxGeometry(.035,2.45,.035),frameMaterial);post.position.set(x,1.225,.04);door.add(post);}
-  const lintel=new T.Mesh(new T.BoxGeometry(1.615,.035,.035),frameMaterial);lintel.position.set(0,2.45,.04);door.add(lintel);scene.add(door);beacons.push({door,frameMaterial,entry});onEntrance?.(entry,entrances.indexOf(entry));
+  }
+  const doorWidth=entry.doorWidth||1.5,doorHeight=entry.doorHeight||2.4;
+  const frameMaterial=new T.MeshBasicMaterial({color:entry.residential?'#e9d6ac':'#b6c9a6',transparent:true,opacity:.18,depthWrite:false});
+  for(const x of [-doorWidth/2-.04,doorWidth/2+.04]){const post=new T.Mesh(new T.BoxGeometry(.035,doorHeight+.05,.035),frameMaterial);post.position.set(x,(doorHeight+.05)/2,.04);door.add(post);}
+  const lintel=new T.Mesh(new T.BoxGeometry(doorWidth+.115,.035,.035),frameMaterial);lintel.position.set(0,doorHeight+.05,.04);door.add(lintel);scene.add(door);beacons.push({door,frameMaterial,entry});onEntrance?.(entry,entrances.indexOf(entry));
 
  }
  for(const entry of entrances)addEntrance(entry);
@@ -151,5 +158,5 @@ export function createInteriors({scene,world,camera,origin,button,hint,onEntranc
    const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.12));for(let i=0;i<steps;i++){if(current.room.clear(view.position.x+dx/steps,view.position.z))view.position.x+=dx/steps;if(current.room.clear(view.position.x,view.position.z+dz/steps))view.position.z+=dz/steps;}
    const atDoor=view.position.z>4&&Math.abs(view.position.x)<1.5;button.hidden=!enabled||!atDoor;button.textContent='E · Return outside';
   }else{near=enabled?entrances.find(e=>Math.hypot(e.x-camera.position.x,e.z-camera.position.z)<3.5&&Math.abs(e.y-camera.position.y)<2):null;button.hidden=!near;button.textContent=near?'E · Enter '+near.name:'';}
- },drawMinimap(ctx,X,Y){for(const e of entrances){const x=X(e.x),y=Y(e.z);ctx.fillStyle='#152e28';ctx.fillRect(x-6,y-7,12,14);ctx.strokeStyle='#70ffd4';ctx.lineWidth=2;ctx.strokeRect(x-5,y-6,10,12);ctx.fillStyle='#70ffd4';ctx.fillRect(x+1,y,2,2);}}};
+ },drawMinimap(ctx,X,Y){for(const e of entrances){const x=X(e.x),y=Y(e.z);ctx.fillStyle='#152e28';ctx.fillRect(x-6,y-7,12,14);ctx.strokeStyle=e.residential?'#e6cd95':'#70ffd4';ctx.lineWidth=2;ctx.strokeRect(x-5,y-6,10,12);ctx.fillStyle=e.residential?'#e6cd95':'#70ffd4';ctx.fillRect(x+1,y,2,2);}}};
 }

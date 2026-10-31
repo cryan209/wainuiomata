@@ -25,3 +25,9 @@ bus.velocity=25;stepCar(bus,{},.01,world);assert.ok(bus.velocity<=21,'Bus speed 
 bus.position={x:0,y:3,z:0};bus.yaw=0;bus.velocity=5;
 world.free=(x,z)=>Math.abs(z+2.625)>.2;stepCar(bus,{w:true},.01,world);assert.equal(bus.velocity,0,'Probes detect obstacles along the middle of a long bus');world.free=()=>true;
 console.log('PASS: bus acceleration, maximum speed and long-body collision probes.');
+const roadWorld={...world,free:(x,z)=>Math.hypot(x-2,z+40)>2,network:{roads:[{type:'footway',width:3,tags:{},p:[new T.Vector2(30,0),new T.Vector2(30,-80)]},{type:'residential',width:8,tags:{},p:[a,b]}],height:()=>3}};
+const stuck={model:{length:4.5,width:1.8},position:{x:22,y:1,z:-40},yaw:Math.PI,velocity:3},recovery=createDriving({traffic:{cars:[stuck]},railways:{trains:[]},world:roadWorld,camera,keys:{},status});
+recovery.enter('car');stuck.position={x:22,y:1,z:-40};assert.ok(recovery.recover());
+assert.ok(Math.abs(stuck.position.x-1.84)<.01&&Math.abs(stuck.position.z+40)>2&&stuck.position.y===3,'Recovery snaps to the nearest drivable road, clear of obstacles, not a footway or the entry point');
+assert.ok(Math.abs(Math.cos(stuck.yaw)+1)<1e-6&&stuck.velocity===0,'Recovered car faces its previous direction of travel along the road');
+console.log('PASS: stuck cars recover onto the nearest road lane.');

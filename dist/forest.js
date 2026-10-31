@@ -1,6 +1,6 @@
 import * as T from './vendor/three.js';
 import {createPines} from './pine-trees.js';
-import {vegetationClear} from './river-clearance.js';
+import {vegetationClear} from './river-clearance.js?v=cells-90';
 export function forestSampler(meta,data){return(x,z)=>{const u=T.MathUtils.clamp((x-meta.minX)/(meta.maxX-meta.minX)*(meta.width-1),0,meta.width-1.001),v=T.MathUtils.clamp((z-meta.minZ)/(meta.maxZ-meta.minZ)*(meta.height-1),0,meta.height-1.001),i=Math.floor(u),j=Math.floor(v),du=u-i,dv=v-j,k=j*meta.width+i;return(data[k]*(1-du)*(1-dv)+data[k+1]*du*(1-dv)+data[k+meta.width]*(1-du)*dv+data[k+meta.width+1]*du*dv)/255}}
 export function addHillsideForest(scene,{density,ground,network,freeBuildings,tunnels,foliage,openSpaces,railways,hydro}){
  let seed=60127;const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};const groups=new Map(),spacing=14,palette=['#c1d2ad','#d3d8ba','#b7c9ad','#d9ddc6','#b8c8b4','#ccd2b9'];

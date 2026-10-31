@@ -1,0 +1,44 @@
+[
+  {
+    "id": "dairy",
+    "title": "Valley Dairy",
+    "text": "Valley Dairy. Milk, bread, and the ice cream you came in for by accident. Pop down before the kettle boils. Valley Dairy. Just around the corner.",
+    "file": "audio/radio/dairy.mp3",
+    "duration": 9.152154
+  },
+  {
+    "id": "cycle",
+    "title": "Valley Cycle Works",
+    "text": "Chain making more noise than your radio? Valley Cycle Works can sort that. Punctures, tune ups, and friendly advice. Valley Cycle Works. Keep the valley rolling.",
+    "file": "audio/radio/cycle.mp3",
+    "duration": 11.161043
+  },
+  {
+    "id": "cafe",
+    "title": "The Long Way Home Caf\u00e9",
+    "text": "Take the long way home. There is a hot coffee and something fresh from the oven waiting at the Long Way Home Cafe. Your next stop can wait.",
+    "file": "audio/radio/cafe.mp3",
+    "duration": 7.674694
+  },
+  {
+    "id": "records",
+    "title": "Valley Records",
+    "text": "Still rewinding the same cassette? Find your next favourite at Valley Records. New discoveries, old favourites, and plenty of questionable album covers. Valley Records. Give your dashboard something new.",
+    "file": "audio/radio/records.mp3",
+    "duration": 13.376825
+  },
+  {
+    "id": "fish",
+    "title": "Valley Fish & Chips",
+    "text": "Dinner plans gone a bit sideways? Valley Fish and Chips has you covered. Hot chips, crispy batter, and one extra scoop for the ride home. Follow your nose, valley.",
+    "file": "audio/radio/fish.mp3",
+    "duration": 10.089433
+  },
+  {
+    "id": "station",
+    "title": "Valley FM",
+    "text": "From the hill road to the harbour. You are listening to Valley F M. Locally imagined. Slightly out of time. Stay with us for another tune from the valley.",
+    "file": "audio/radio/station.mp3",
+    "duration": 8.444218
+  }
+]

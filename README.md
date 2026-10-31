@@ -249,7 +249,7 @@ Mapped river and stream centrelines now use smooth channels, gradual downhill pr
 
 Walk into shallow water to wade and deeper water to swim. WASD swims, Shift swims faster, Space/E rises, and C/Q/Control dives; looking up or down also changes forward swimming direction. The bed stops downward movement. Underwater visibility, tint and muffled audio recover on resurfacing. Bridge support is checked against the player's height, so swimming underneath does not snap you onto a bridge deck. The coast also supports swimming and diving over an approximate seabed.
 
-Cars splash on entry, lose speed in water, flood their engines and gradually settle. Shallow water can leave a flooded car grounded with its roof exposed; sufficiently deep water submerges it. F exits into the surrounding water. R while driving recovers the car to its saved dry starting point. Controls → Explore the region includes Wainuiomata River · Swim, Bank and Drive destinations.
+Cars splash on entry, lose speed in water, flood their engines and gradually settle. Shallow water can leave a flooded car grounded with its roof exposed; sufficiently deep water submerges it. F exits into the surrounding water. R while driving recovers the car onto the nearest drivable road (within 400 m), in the left lane facing its current heading and clear of poles and parked cars; with no road nearby it returns to its saved dry starting point. Controls → Explore the region includes Wainuiomata River · Swim, Bank and Drive destinations.
 
 Widths use waterway tags where available; other widths, river depths, bank shapes, seabed depths and flooding are procedural approximations, not surveyed bathymetry or a hydrodynamic simulation. Covered and culverted streams stay hidden.
 
@@ -413,6 +413,93 @@ A shared large supermarket interior includes long stocked grocery aisles, produc
 
 `node scripts/prepare_supermarkets.mjs` regenerates the site manifest from regional building names and the saved Wainuiomata OSM point. OpenStreetMap location data © OpenStreetMap contributors, ODbL, retrieved 31 October 2026 from https://api.openstreetmap.org/api/0.6/map?bbox=174.939,-41.263,174.946,-41.257 . `node tests/supermarkets.mjs` checks placement, exclusions and the walkable large-store layout.
 
+
+## Music playlist and vehicle audio
+
+Controls → Music track selects Valley Afterglow (warm keys), Harbour Lights (house), Hill Road FM (breakbeat), Coast Road Sunday (slow keys) or Morning in the Ranges (ambient). The playlist now contains twelve arrangements; Auto rotates through all twelve after 32 bars apiece; selecting a track repeats that arrangement. Selection and independent music/effects levels persist locally. These are original procedural instrumental arrangements, generated in the browser.
+
+Vehicle sound now layers RPM-driven firing pulses, filtered exhaust and intake, with different four/six-cylinder and diesel tones and a brief load dip on gear changes. Trains have traction whine, rhythmic rail rumble and an air-brake release; helicopters have a pulsing rotor and air wash; bicycles have chain/freewheel noise and an H bell. Tyre noise follows road speed, flooded engines stop, and leaving a vehicle fades its layers. Effects are synthesised approximations, not recordings of the named models.
+
+Run `node tests/sound.mjs` and `node tests/audio-arrangements.mjs` for audio controls, all five playlist arrangements, pause/resume, vehicle layers, gear changes, flooding, brake release and audio graph reuse.
+
+
+## Valley FM radio
+
+The twelve-track playlist adds Queen Street Shuffle (funk), Petone Sunset Dub, Midnight Express (synth), Rain on the Veranda (swung keys), Seaview Warehouse (garage), Rata Street Daydream (funk) and Stars over Eastbourne (ambient). New grooves include swung percussion, offbeat chords, extra bass pickups and synth arpeggios.
+
+In automatic Valley FM mode, a short fictional radio spot plays after every two tracks, then the next track begins. Six spots rotate: Valley Dairy, Valley Cycle Works, The Long Way Home Café, Valley Records, Valley Fish & Chips and a Valley FM station ident. These are fictional promotions with synthetic narration (macOS Karen and Daniel voices), packaged as six mono MP3 files totalling about 480 KB. The clips are loaded after audio starts; no live speech service is used. A caption displays each script. Controls → Fictional radio ads switches spots off and saves the preference. Selecting an individual track repeats it without ads. Pause, mute, hiding the tab and changing tracks stop the current spot; a missing audio file leaves music playing.
+
+`scripts/build_radio_ads.py` rebuilds the clips on macOS with `say`, `ffmpeg` and `ffprobe`. `node tests/radio.mjs` verifies packaged assets, rotation, cancellation, captions, handoff to music and failed-load fallback.
+
+
+## Dashboard radio, street ambience, rain and lookouts
+
+While driving, the dashboard stereo offers three fictional stations: Valley FM (92.4, all twelve tracks and optional local ads), Harbour Heat (98.6, dance/funk) and Ranges Radio (88.2, mellow/ambient). Use [ / ] to tune, or J to release mouse capture and use the preset buttons, tuning slider, volume and power. Stations also appear in Controls. A brief burst of static accompanies tuning. Station, volume and power preferences persist. Choosing a specific track repeats it without ads.
+
+A fixed pool of synthesised voices follows up to three nearby moving traffic vehicles with distance, vertical separation and stereo panning. Birds favour dry daytime conditions, wind responds to mapped woodland density, occasional distant dogs punctuate inhabited streets, and entering/exiting an interior rings a shop bell. Vehicle cabins reduce outdoor ambience. These are lightweight sound approximations, not wildlife recordings.
+
+In cockpit view, rain collects on the windscreen and two animated wipers clear droplets. K (or the wiper button) cycles Auto / Off / Slow / Fast; Auto follows rain intensity. The overlay hides when looking sideways, switching to chase view, exiting or pausing. Wet tyres hiss and kick up a bounded spray in chase view; wipers swish. Tunnels shelter the effects. Rain reduces tyre grip by up to 25% in the gameplay handling model, increasing braking distance. Existing wet-road shading remains in use. The windscreen is an illustrative screen overlay rather than model-specific glass geometry.
+
+Three local lookouts now have travel entries, minimap triangles, small illustrative benches/signs and persistent discoveries when visited on foot: Wainuiomata Hill / Pukeatua Lookout, Kiwanis Lookout, and Centenary Lookout in Korokoro. Anchors follow the shipped OpenStreetMap parking aisle/path ways 16868680, 234502136 and 199293308 (© OpenStreetMap contributors, ODbL); scenery is not a surveyed reconstruction. Procedural planting leaves a small foreground opening at each viewpoint. Arrival faces the harbour or valley and uses existing terrain streaming and safe landing checks. See [Waiu Park / Wainui Lookout](https://www.wellingtonnz.com/visit/trails/waiu-park), [Wainuiomata place-name history / Kiwanis Lookout](https://ttc.org.nz/TararuaHistory/WainuiomataPlaceNameOrigins) and [mapped Centenary Lookout](https://www.openstreetmap.org/way/199293308).
+
+Run `node tests/radio-rain-lookouts.mjs` plus the sound, radio, audio-arrangements, vehicle-handling, driving, driving-frame-sync and cockpit-breakaway checks. Coverage includes station playlists, saved controls, automatic wipers, bounded spray, mapped lookout anchors, on-foot discoveries and wet-road braking.
+
+
+## Local radio towers
+
+Three geolocated transmitters now mark the skyline: Mount Fitzherbert above the Hutt Valley, Mount Victoria in Wellington, and Mount Kaukau north of the city. Coordinates are projected from cached OpenStreetMap tower features into the existing NZTM world. Kaukau uses the mapped 122 m pre-2022 profile for the game's 2002 setting; the 46 m Fitzherbert and 50 m Mount Victoria heights are illustrative estimates because their source features have no height tags. Lattice geometry, platforms, ladders, dishes and aerial arrangements are approximate. Mount Victoria has red/white sections; red obstruction lights appear at night. These landmarks do not assign the game's fictional stations to real transmitters.
+
+Each site uses one batched detailed mesh nearby and a lightweight line silhouette beyond 2.2 km. Towers remain visible up to 26 km subject to the existing camera, terrain occlusion and weather fog. Footings follow sampled ground; tower supports and upper antennas have height-aware collision. Generated vegetation leaves a small opening around each structure. The minimap marks transmitters, and Controls → Explore the region adds a Tower view at each site, using drone mode to frame the full mast.
+
+Coordinate sources: OpenStreetMap [Fitzherbert node 2392530592](https://www.openstreetmap.org/node/2392530592), [Mount Victoria node 296684884](https://www.openstreetmap.org/node/296684884), and [Kaukau way 361818550](https://www.openstreetmap.org/way/361818550), © OpenStreetMap contributors, ODbL, retrieved 31 October 2026. The cached source strips unrelated features and account metadata. [Kordia's tower history](https://www.kordia.co.nz/news-and-views/mt-kaukau-tower-wellingtons-highest-point-turns-60) explains the shorter present-day Kaukau mast and its 2022 removal of redundant upper steelwork. [The Wellington VHF Group](https://vhf.nz/index.php/MtVictoria) documents the Mount Victoria site; [local place-name history](https://www.ttc.org.nz/TararuaHistory/WainuiomataPlaceNameOrigins) documents the Mount Fitzherbert transmitter.
+
+Rebuild projected anchors with `/private/tmp/wainui-gis/bin/python scripts/prepare_radio_towers.py` (or a Python environment with pyproj). Run `node tests/radio-towers.mjs` for coordinate bounds, finite geometry, historical mast height, draw-call budget, near/far switching, lights, collision and travel entries.
+
+
+## RSM cell sites
+
+The world includes 471 cell-site location clusters derived from 2,426 current transmitter licences in the public RSM / MBIE Register of Radio Frequencies, retrieved 31 October 2026. The import searches 40 km around the Wainuiomata origin, clips to the playable bounds, selects current unsuppressed Spark, One NZ and 2degrees transmitting records in mobile downlink/TDD bands, and excludes receivers, national rights without coordinates and microwave links. Repeated licence/sector points are grouped within 12 m of a retained RSM anchor. NZTM2000 coordinates are used directly; legacy NZGD1949 coordinates are never mistaken for NZGD2000.
+
+RSM points indicate licensed antenna locations rather than a surveyed inventory of physical towers. The models are illustrative: 343 monopole clusters (20 m), nine hilltop lattice supports (26 m), and 119 rooftop mounts (5 m above the game roof). Structure types are inferred from containing building footprints and hilltop location names; heights and sector panel arrangements are estimated, not RSM measurements. Roof elevation comes from the existing local/regional building models, with actual loaded roof heights preferred. A cellular location within 15 m of an existing radio tower shares that tower rather than adding another pole. Current locations do not represent the mobile network as it existed in 2002.
+
+Six batched draw calls at most cover the entire cellular layer: three support styles, shared sector antennas, equipment cabinets and distant silhouettes. Detailed sites render within 1.6 km and simple masts out to 5.5 km. Ground poles and cabinets have height-aware collision; tiny foreground clearances keep generated trees out of the masts. Small blue squares mark sites on the minimap. Controls → Explore the region offers Wainuiomata / Lower Hutt cell-tower views and a Wellington rooftop-antenna view. Preview cameras are framed after nearby buildings load, choosing a direction and altitude that clear neighbouring roofs.
+
+Source: [RSM public register](https://rrf.rsm.govt.nz/ui/search/licence), [RSM search guidance](https://www.rsm.govt.nz/licensing/how-do-i/use-the-rrf/search-the-rrf/search-licences), and [RSM copyright](https://www.rsm.govt.nz/copyright). Crown copyright acknowledged. `scripts/data/cell-sites-rsm.json` preserves the filtered site anchors, contributing licence IDs/frequencies, query, date and projection; it omits account and contact details. Runtime data is bundled locally in `dist/cell-sites.json`; the game does not query RSM.
+
+`scripts/prepare_cell_sites.py --fetch --retrieved YYYY-MM-DD` refreshes the public JSON searches using curl, without authentication or an Access database reader. Omit `--fetch` to rebuild from `/private/tmp/wainui-rsm` cached searches. `--cache PATH` selects another cache. The importer refuses incomplete paginated results. Run `node tests/cell-towers.mjs`, plus the radio-towers, radio-rain-lookouts, rivers-imagery and driving-frame-sync checks.
+
+
+## Short overhead house services
+
+Rendered low-voltage street spans now supply nearby house facades with a pair of short sagging service wires. Eligibility is a horizontal distance of at most 8 m from the actual visible overhead conductor to the nearest outer house wall, including exactly 8 m. The measurement uses the footprint edge rather than the house centre or the nearest pole. Each house receives at most one nearest valid connection, attached just below its eaves. House selection follows the existing house/shop/industrial presentation plus footprint area and height checks; small sheds, garages, commercial buildings, landmarks and rail canopies are excluded.
+
+Only low-voltage polylines that passed the existing street-wire clearance checks can feed a house. Underground-supply streets, plain lamp columns, missing/rejected spans and railway wires never create house services. Routes are rejected if they cut through another building, hit terrain, or fall below the game's road/rail clearance envelope. A house whose closest feasible route is farther than 8 m remains unconnected. Service geometry is scenery, not a surveyed electrical layout.
+
+All nearby house services share one additional line batch. They refresh as street furniture and regional houses stream in and out, and their count appears as house leads in the P performance display. Run `node tests/house-service-lines.mjs`, `node tests/street-furniture.mjs` and `node tests/driving-frame-sync.mjs` for the exact cutoff, overhead-only eligibility, eave attachment, sag, exclusions, clearance and streaming cleanup.
+
+## Verge utility scenery
+
+Street-furniture chunks include illustrative green telecom cabinets, compact electrical pillars, double-door ground transformers on underground-supply streets, rectangular access covers and small yellow water-service lids. Cabinets have concrete plinths, recessed doors, hinges, handles, vents and small identification/caution plates. Placement is deterministic and spaced along suitable verges; this is decorative scenery rather than a surveyed utility inventory.
+
+Footprint samples reject buildings, fences, carriageways, junctions, waterways, bridges, railway margins and steep or uneven ground. Cabinets reserve pedestrian and parking clearance before their chunk loads; flush covers remain passable. Regional building clearance is checked again when rendering a chunk. The equipment merges into each chunk's existing opaque geometry and shares its materials, adding no dedicated draw calls or lights. P shows the streamed utility count. Controls → Explore the region → Verge utilities · Cabinet view provides a close streetside view. Run `node tests/utility-scenery.mjs` alongside the street-furniture, house-service-lines and driving-frame-sync checks.
+
+
 ## Loading progress
 
 While the world loads, a bar under the start button shows what is happening: each download by name and size (`loading-progress.js` counts response bytes as they stream), then the named build steps — coastline, rivers, roads, terrain, trees, Wellington and Hutt buildings, traffic, bus routes. Startup code marks a step with `await globalThis.loadingStage?.('Name')`, which paints the label before the step blocks the page. Downloads fill the first 40% of the bar against the bytes the last completed load needed; the build fills the rest against how long it took (both remembered in `localStorage`). A download that sends nothing for 15 seconds is called out by name. Building the nearby terrain advances one slice per animation frame, so a load in a background tab pauses until the tab is shown.
+
+## Larger-house facades
+
+Eligible residential footprints of 180–650 m² and eave heights of 2.6–8.5 m use continuous, metre-scaled cladding across their front, side and upper walls. Individual photographic window and entrance crops replace repeated complete cottage frontages. Each house has at most one entrance on its principal street-facing wall; upstairs and side/rear bays contain windows or blank cladding. Window widths, sill levels and storey heights use physical dimensions, with corner and terrain clearance checks. Small houses, shopfronts, industrial buildings, explicit nonresidential types, landmarks, rail canopies and plain-facade buildings retain their existing treatment.
+
+Individual joinery crops come directly from the bundled facade atlas, including matching glass-only night masks. Sill/head trim, recess shadows, an eave shadow line and restrained foundation strips add detail. Shared cladding materials also use shallow material-specific bump relief for boards, brick and roughcast. Roof survey geometry is preserved. The same layout runs for detailed local buildings, outer suburbs and regional streamed chunks; window/door/trim geometry is batched per material, and regional unloading releases owned geometry/materials while retaining shared textures.
+
+Controls → Explore the region → Larger houses · Facade view opens an example. Run `node tests/large-house-facades.mjs`, `node tests/facade-mapping.mjs`, `node tests/building-environment.mjs` and `node tests/regional-roofs.mjs`.
+
+## Enterable houses
+
+Six accessible larger-house front doors around the local valley lead into furnished residential interiors: Rimu, Kōwhai, Tawa, Kauri, Rātā and Mānuka House. Three warm family/bungalow/retro furnishing palettes share a walkable hall, living room, kitchen/dining area, main bedroom, second bedroom/study and bathroom. They include fabric sofas, rugs, a CRT television, timber floors, dining furniture, kitchen appliances, beds, wardrobes, shower, basin, toilet, curtains and warm lights. These are fictional interiors rather than surveyed floorplans or residents' homes.
+
+House entrances align with the individual front-door positions from the larger-house facade layer. Existing commercial/supermarket buildings are excluded, and blocked, submerged, steep or elevated thresholds are rejected. The existing exterior door is retained, with a subtle warm outline; gold minimap doorway markers distinguish houses. Controls → Explore the region lists each house entrance. Approach the door and press E (or use the on-screen button); return to the entry hall and press E to go outside at the exact saved position. Existing indoor audio/weather sheltering applies.
+
+Rooms are built only on first entry and cached by furnishing style. Solid furniture and wall partitions use the existing substepped indoor movement; flat rugs/floors remain passable. Run `node tests/house-interiors.mjs` and `node tests/interiors.mjs`. The new tests flood-fill each furnished layout to ensure all rooms remain reachable, and verify exterior-door alignment, entry exclusions, room caching and safe exits.
