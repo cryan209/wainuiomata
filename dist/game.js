@@ -7,7 +7,7 @@ import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js?v=house-interiors-95';
 import {createBusService} from './bus-service.js?v=textured-peds-70';
 import {createWaterWorld} from './water-world.js?v=audio-music-58';
-import {loadWorld} from './geoworld.js?v=large-houses-94';
+import {loadWorld} from './geoworld.js?v=needles-97';
 import {createSound} from './sound.js?v=radio-rain-88';
 import {createPerformanceHUD} from './performance.js?v=utility-scenery-93';
 import {addSky} from './textures.js';
