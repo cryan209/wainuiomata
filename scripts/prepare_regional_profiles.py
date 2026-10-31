@@ -55,23 +55,5 @@ with concurrent.futures.ThreadPoolExecutor(2) as pool:
    b['height']=round(max(2.2,low-.2),2);b['heightSource']='LINZ Wellington 2013–2014 LiDAR DSM minus DEM; robust roof samples';b['roof']={'rise':round(max(0,high-b['height']),2),'measured':True,'samples':count};measured+=1
   print('Roof survey',name,len(results),'fits;',measured,'new measured buildings',flush=True)
 # Every streamed building gets a stable footprint-aligned roof, even outside coverage.
-far=[];farRoofs=[];kinds={}
-for c in m['chunks']:
- data=chunks[c['id']]
- for b in data['buildings']:
-  p=Polygon(b['rings'][0],b['rings'][1:]);rect=list(p.minimum_rotated_rectangle.exterior.coords);a,bb,cc=rect[:3];l,w=math.dist(a,bb),math.dist(bb,cc)
-  if w>l:a,bb,cc=bb,cc,rect[3];l,w=w,l
-  ux,uz=(bb[0]-a[0])/max(.01,l),(bb[1]-a[1])/max(.01,l);cx=sum(q[0] for q in rect[:4])/4;cz=sum(q[1] for q in rect[:4])/4;roof=b.get('roof',{});meas=roof.get('measured',False)
-  if not roof.get('frame'):
-   if meas:rise=roof['rise']
-   elif p.area<650 and w>4 and b['height']<14:rise=min(w*.23,3.5,b['height']*.35);b['height']=round(max(2.2,b['height']-rise),2)
-   else:rise=min(1.4,w*.065) if p.area>650 and b['height']<15 else 0
-   kind='flat' if rise<.6 or b['height']>18 else 'gable' if p.area>650 or l/w>2.1 or int(b['id'])%3==0 else 'hip'
-   if kind=='flat':rise=0
-   roof.update(kind=kind,rise=round(rise,2),frame=[round(cx,3),round(cz,3),round(ux,6),round(uz,6),round(l,3),round(w,3)]);b['roof']=roof
-  roof['rise']=round(min(roof['rise'],6,w*.55),2)
-  farRoofs.extend([roof['rise'],{'flat':0,'gable':1,'hip':2}[roof['kind']]])
-  kinds[roof['kind']]=kinds.get(roof['kind'],0)+1
-  far.extend([cx,cz,b['ground']-datum,b['height'],l,w,-math.atan2(uz,ux),float(int(b['id'])%8)])
- (D/c['file']).write_text(json.dumps(data,separators=(',',':')))
-np.array(far,dtype='<f4').tofile(D/'regional-far.bin');np.array(farRoofs,dtype='<f4').tofile(D/'regional-roof-far.bin');m['roofProfiles']={'measuredUpperHutt':sum(1 for d in chunks.values() for b in d['buildings'] if b.get('roof',{}).get('measured')),'kinds':kinds,'source':'Upper Hutt heights: LINZ Wellington 2013–2014 LiDAR DSM−DEM. Gable/hip/flat geometry inferred from footprint and roof height distribution; no surveyed roof-plane classification.'};m['upperHutt']['heights']='LiDAR-derived eave/ridge heights for '+str(m['roofProfiles']['measuredUpperHutt'])+' parts; remaining heights inferred';(D/'regional-buildings.json').write_text(json.dumps(m,separators=(',',':')));print(m['roofProfiles'],flush=True)
+from package_regional_roofs import package
+package(m,chunks,datum)

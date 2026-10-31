@@ -359,7 +359,7 @@ Road widths use one lane model for every class: lane count × class lane width p
 
 The western map now includes central Wellington, the waterfront, Karori, Newtown, Island Bay, Kilbirnie and Miramar. The travel menu offers street-level arrivals in nine districts. Roads, paths, coastline and parks come from OpenStreetMap; building footprints come from LINZ. New western terrain uses the national 8m contour DEM sampled on a 25m grid. Building heights use matching OSM height or level tags where available; other heights are explicitly estimated from footprint area. Wellington roof forms and facades remain stylised, without surveyed architectural detail or new roof photography.
 
-Run `/private/tmp/wainui-gis/bin/python scripts/expand_wellington.py` to reproduce the cached import, then `python tests/wellington.py` in an environment with numpy, Pillow and pyproj. The import retains existing terrain samples and building IDs.
+Run `/private/tmp/wainui-gis/bin/python scripts/expand_wellington.py` to reproduce the cached import, then `/private/tmp/wainui-gis/bin/python scripts/package_regional_roofs.py` so the added buildings get gable/hip/flat roofs and matching far-view rows (it needs no downloads, and keeps `regional-far.bin` and `regional-roof-far.bin` at one row per building), then `python tests/wellington.py` in an environment with numpy, Pillow and pyproj. The import retains existing terrain samples and building IDs.
 
 ## Remutaka Range and open sea
 

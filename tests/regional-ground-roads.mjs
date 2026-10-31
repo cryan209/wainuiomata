@@ -21,7 +21,8 @@ assert.equal(lanes.get(ways[1]),2,'Untagged continuation inherits lanes');assert
 
 // Regional ground: whole-region overview, valley and urban tiers cover the regional terrain without overlapping Wainuiomata detail.
 const dist=new URL('../dist/',import.meta.url),region=JSON.parse(fs.readFileSync(new URL('regional-terrain.json',dist))),ground=JSON.parse(fs.readFileSync(new URL('ground-regional.json',dist))),detail=JSON.parse(fs.readFileSync(new URL('ground-detail.json',dist)));
-const o=ground.overview;assert.ok(o.minX<=region.minX&&o.minZ<=region.minZ&&o.maxX>=region.maxX&&o.maxZ>=region.maxZ,'Overview covers the regional terrain');
+// The 20m outer layer covers the whole terrain grid (Wellington, Porirua, the Remutaka strip); the sharper 8m Hutt overview sits inside it.
+const o=ground.overview,outer=ground.overviewOuter;assert.ok(outer.minX<=region.minX&&outer.minZ<=region.minZ&&outer.maxX>=region.maxX&&outer.maxZ>=region.maxZ&&fs.existsSync(new URL(outer.image,dist)),'Outer overview covers the regional terrain');assert.ok(o.minX>=outer.minX&&o.maxX<=outer.maxX&&o.minZ>=outer.minZ&&o.maxZ<=outer.maxZ+8,'Hutt overview lies inside the outer layer');
 for(const tier of ['valley','urban'])for(const t of ground[tier].tiles){assert.ok(fs.existsSync(new URL(t.image,dist)),t.image);assert.equal(t.maxX-t.minX,ground[tier].span)}
 assert.ok(ground.urban.tiles.some(t=>t.minX>8000&&t.minZ<-14000),'Upper Hutt has urban ground tiles');
 const inner=detail.tiles;assert.ok(!ground.urban.tiles.some(t=>inner.some(d=>t.minX>=d.minX&&t.maxX<=d.maxX+256&&t.minZ>=d.minZ&&t.maxZ<=d.maxZ+256&&t.minX>=-3328&&t.maxX<=3328&&t.minZ>=-3328&&t.maxZ<=3328)),'Native Wainuiomata detail is not duplicated');
