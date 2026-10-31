@@ -1,6 +1,6 @@
 import {setCellSiteClearance} from './cell-site-clearance.js?v=cells-90';
 import * as T from './vendor/three.js';
-import {createPropertyFences} from './fences.js?v=smooth-junctions-25';
+import {createPropertyFences} from './fences.js?v=fence-lod-100';
 import {applyRoadImagery} from './road-imagery.js?v=intersections-50';
 import {createGroundDetail} from './ground-detail.js?v=regional-ground-65';
 import {applyGroundImagery} from './ground-imagery.js?v=regional-ground-65';
@@ -10,8 +10,8 @@ import {makeTextures} from './textures.js?v=large-houses-94';
 import {createHydrology,createRoadNetwork} from './water-roads.js?v=regional-tunnels-101';
 import {facadeProfile,facadeStyle,FACADE_COUNT} from './appearance.js?v=large-houses-94';
 import {createTunnels} from './tunnels.js?v=perf-59';
-import {addGreenery} from './greenery.js?v=needles-97';
-import {forestSampler,addHillsideForest} from './forest.js?v=needles-97';
+import {addGreenery} from './greenery.js?v=pine-lod-100';
+import {forestSampler,addHillsideForest} from './forest.js?v=pine-lod-100';
 import {createFoliage} from './foliage.js';
 import {faceMapping,splitFacade} from './facade-mapping.js';
 import {createOpenSpaces} from './open-spaces.js';

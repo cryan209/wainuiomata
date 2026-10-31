@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {createPines} from './pine-trees.js?v=needles-97';
+import {createPines} from './pine-trees.js?v=pine-lod-100';
 import {vegetationClear} from './river-clearance.js?v=cells-90';
 export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,tunnels,foliage,openSpaces,coast,railways}){
  let seed=1948;const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};const color=new T.Color(),dummy=new T.Object3D(),up=new T.Vector3(0,1,0);
@@ -24,5 +24,5 @@ export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,
  // Native-looking riverside planting leaves water and bridge approaches clear.
  for(const river of hydro.rivers)for(let i=1;i<river.p.length;i++){const a=river.p[i-1],b=river.p[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);for(let d=3;d<len;d+=7){const t=d/len,side=rand()>.5?1:-1,offset=river.width/2+3+rand()*7,x=a.x+dx*t+dz/len*offset*side,z=a.z+dz*t-dx/len*offset*side;bush(x,z,.6+rand()*1.2);if(nf<flaxCount&&valid(x+1.8,z,.5,1)){matrix(flax,nf,x+1.8,ground(x+1.8,z),z,.7+rand()*.6,.7+rand()*.6,.7+rand()*.6,rand()*6);flax.setColorAt(nf++,color.set('#809568'))}}}
  for(let attempts=0;attempts<30000&&ns<shrubCount;attempts++){const x=(rand()-.5)*6200,z=(rand()-.5)*6200;bush(x,z,.55+rand()*1.2);if(nf<flaxCount&&rand()<.2&&valid(x+2,z,.5,1)){matrix(flax,nf,x+2,ground(x+2,z),z,1,.8+rand()*.5,1,rand()*6);flax.setColorAt(nf++,color.set('#718e5b'))}}
- trunks.count=shadow.count=nt;crowns.count=nc;conifers.count=np;cabbage.count=nk;shrubs.count=ns;flax.count=nf;for(const m of [trunks,crowns,conifers,cabbage,shrubs,flax,shadow]){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}return{trees:nt,shrubs:ns,flax:nf};
+ trunks.count=shadow.count=nt;crowns.count=nc;cabbage.count=nk;shrubs.count=ns;flax.count=nf;conifers.computeBoundingSphere();for(const m of [trunks,crowns,cabbage,shrubs,flax,shadow]){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}return{trees:nt,shrubs:ns,flax:nf};
 }
