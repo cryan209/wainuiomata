@@ -43,5 +43,11 @@ export function regionalDestinations(world){
   ['remutaka-summit','Remutaka Hill · Summit','State Highway 2',{x:24403,z:-15671}],
   ['featherston','Featherston · Fitzherbert Street','Fitzherbert Street',{x:32269,z:-15424}]
  ]){const hit=nearestRoad(road,anchor);if(hit){const offset=hit.width/2+.65;result.set(id,{name,x:hit.x+Math.cos(hit.yaw)*offset,z:hit.z-Math.sin(hit.yaw)*offset,yaw:hit.yaw,pitch:-.08})}}
+ for(const r of roads.filter(r=>r.tunnel&&r.name&&r.length>40&&!r.fullyShared)){
+  for(const [side,i,j]of [['entrance',0,1],['exit',r.p.length-1,r.p.length-2]]){
+   const p=r.p[i],q=r.p[j],length=p.distanceTo(q)||1,dx=(q.x-p.x)/length,dz=(q.y-p.y)/length;
+   result.set('mapped-tunnel-'+r.id+'-'+side,{name:r.name+' · '+side,x:p.x-dx*8,z:p.y-dz*8,yaw:Math.atan2(-dx,-dz),pitch:0});
+  }
+ }
  return result;
 }

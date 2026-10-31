@@ -12,7 +12,9 @@ export function roadLanes(tags){const lanes=parseFloat(tags.lanes);return lanes>
 export const laneWidth=tags=>laneWidths[tags.highway.replace('_link','')]||3;
 export function roadWidth(tags,lanes=roadLanes(tags)){
  const type=tags.highway,base=type.replace('_link',''),tagged=parseFloat(tags.width);
- if(['footway','path','cycleway','steps','track','bridleway','corridor','part'].includes(type))return clamp(tagged>=.8?tagged:2,1.2,6);
+ // Former railway bores carry a narrow trail inside a wider tunnel opening.
+ // Keep tagged widths; infer a usable single-track bore when no width exists.
+ if(['footway','path','cycleway','steps','track','bridleway','corridor','part'].includes(type))return clamp(tagged>=.8?tagged:tags.tunnel==='yes'&&tags.railway==='abandoned'?4.8:2,1.2,6);
  if(type==='pedestrian')return clamp(tagged>=1?tagged:7,1.2,20);
  let computed;if(type==='service')computed={driveway:3,parking_aisle:5.5,alley:3.5,'drive-through':3.5}[tags.service]??4;
  else{

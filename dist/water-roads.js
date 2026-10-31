@@ -1,7 +1,8 @@
 import * as T from './vendor/three.js';
+import {namedRoadTunnels} from './tunnel-scenery.js?v=regional-tunnels-101';
 import {buildJunctions,solveRoadGrades,approachLimit} from './road-grades.js?v=long-tunnels-84';
 import {convexFootprint,subtractFootprint,triangulateFragments,insideFootprint} from './road-clipping.js?v=smooth-junctions-25';
-import {roadWidth,roadLanes,laneWidth,isOneway,inheritLanes,roadIndex,associatePaths,projectSegment,planOverbridges,underpassHeight,planUnderpasses,clearanceHeight,offsetRoadPoint,associateBridgeDecks} from './road-topology.js?v=road-underpass-1';
+import {roadWidth,roadLanes,laneWidth,isOneway,inheritLanes,roadIndex,associatePaths,projectSegment,planOverbridges,underpassHeight,planUnderpasses,clearanceHeight,offsetRoadPoint,associateBridgeDecks} from './road-topology.js?v=regional-tunnels-101';
 import {applyRoadDetail} from './road-textures.js?v=local-road-aerial-48';
 import {roadStyle} from './appearance.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -125,8 +126,9 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
  pumpGeometry=camera=>{if(!pendingChunks.size&&!geometryJob)return;const start=performance.now();while(performance.now()<start+(urgent?8:3)){if(!geometryJob){if(performance.now()<nextSearch)return;let best=null,bestD=4800;for(const id of pendingChunks){const c=centre(id),d=Math.hypot(c.x-camera.x,c.z-camera.z);if(d<bestD){best=id;bestD=d}}if(!best){nextSearch=performance.now()+500;return}urgent=bestD<700;pendingChunks.delete(best);geometryJob=buildChunks(new Set([best]))}if(geometryJob.next().done){geometryJob=null;if(!pendingChunks.size)release();return}}}
  }
  overrides.clear();
+ const tunnelScenery=buildGeometry?namedRoadTunnels(scene,{roads,height,ground}):null;
  // Markings, footpaths and small structures are only a pixel or two wide past 1.6km.
  const minorSurfaces=new Set(['line','pavement','rail','structure']);
- return{roads,junctions,controlNodes:map.controls||[],junctionAt(x,z){return junctionHits(x,z).length>0},height,at,underpassAt,underpassWall,clipTerrain,update(camera){pumpGeometry(camera);const now=performance.now();if(now<nextRoadUpdate)return;nextRoadUpdate=now+250;refreshClip(camera);// Far chunks leave the scene graph entirely; hidden objects still cost a matrix update every frame.
+ return{roads,junctions,tunnelScenery,controlNodes:map.controls||[],junctionAt(x,z){return junctionHits(x,z).length>0},height,at,underpassAt,underpassWall,clipTerrain,update(camera){tunnelScenery?.update(camera);pumpGeometry(camera);const now=performance.now();if(now<nextRoadUpdate)return;nextRoadUpdate=now+250;refreshClip(camera);// Far chunks leave the scene graph entirely; hidden objects still cost a matrix update every frame.
 for(const c of roadChunks.values()){const d=Math.hypot(camera.x-c.x,camera.z-c.z),near=d<4200;if(near!==!!c.group.parent){if(near)scene.add(c.group);else scene.remove(c.group)}if(near)for(const m of c.group.children)if(minorSurfaces.has(m.userData.surface))m.visible=d<1600}},get stats(){return{gradeNodes:gradeStats.nodes,gradeGraphBytes:gradeStats.graphBytes,chunks:roadChunks.size,visible:[...roadChunks.values()].filter(c=>c.group.parent).length}},ground,near(x,z,margin=0){const hit=at(x,z);return !!hit&&!hit.r.bridge&&hit.d<hit.r.width/2+margin+5},walkHeight(x,z,y){const hit=surface(x,z,y);return hit?hit.y:hydro.ground(x,z)},underpass(x,z,y){const u=underpassAt(x,z);return u&&u.roofed&&u.side<u.half&&y<u.floor+u.r.headroom+.7?{floor:u.floor,roof:u.floor+u.r.headroom}:null},nearest(x,z){const hit=at(x,z);return hit?{d:hit.d,name:hit.r.name||'Wainuiomata'}:{d:Infinity,name:'Wainuiomata'}},onBridge(x,z,y){if(junctionHits(x,z).some(h=>h.bridge&&(y===undefined||Math.abs(h.height-(y-2))<2.5)))return true;for(const {r,i}of spatial.get(Math.floor(x/50)+','+Math.floor(z/50))||[]){if(!r.bridge)continue;const a=r.p[i],b=r.p[i+1],dx=b.x-a.x,dz=b.y-a.y,t=clamp(((x-a.x)*dx+(z-a.y)*dz)/(dx*dx+dz*dz||1),0,1);if(Math.hypot(x-a.x-dx*t,z-a.y-dz*t)<r.pavementWidth/2+.1&&(y===undefined||Math.abs(height(r,i,t,x,z)-(y-2))<2.5))return true}return false}};
 }
