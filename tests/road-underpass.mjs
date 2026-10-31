@@ -8,9 +8,10 @@ const make=(elements,ground,options={buildGeometry:false})=>createRoadNetwork(ne
 const ground=(x,z)=>x*.02,elements=[
  way(1,'secondary',[[-150,0,1],[0,0,2],[150,0,3]],{name:'Main Road'}),
  way(2,'secondary_link',[[0,-120,10],[0,-18,11]]),way(3,'secondary_link',[[0,-18,11],[0,0,12],[0,18,13]],{tunnel:'yes',layer:'-1'}),way(4,'secondary_link',[[0,18,13],[0,120,14]]),
- way(5,'service',[[300,-200,20],[300,200,21]],{tunnel:'yes',layer:'-1'})];
+ way(5,'service',[[300,-200,20],[300,200,21]],{tunnel:'yes',layer:'-1',name:'Wainuiomata Tunnel'}),
+ way(6,'path',[[600,-200,30],[600,200,31]],{tunnel:'yes',layer:'-1',access:'no'})];
 const network=make(elements,ground),tunnel=network.roads.find(r=>r.tunnel),main=network.roads.find(r=>r.name==='Main Road');
-assert.ok(tunnel,'Short tunnel=yes way is built as a road');assert.equal(network.roads.filter(r=>r.tunnel).length,1,'A 400m bored tunnel is left to the tunnel interior');
+assert.ok(tunnel,'Short tunnel=yes way is built as a road');assert.equal(network.roads.filter(r=>r.tunnel).length,1,'The Wainuiomata Tunnel interior and long closed tunnels are left out');
 assert.ok([10,14].every(node=>network.roads.some(r=>!r.tunnel&&r.p.some(p=>p.node===node)))&&[11,13].every(node=>tunnel.p.some(p=>p.node===node)&&network.roads.some(r=>!r.tunnel&&r.p.some(p=>p.node===node))),'Underpass shares its portal nodes with the approach roads');
 // The floor is straight between the portals, inside the link grade limit.
 const floorAt=z=>network.walkHeight(0,z,tunnel.floorStart+2),floor0=floorAt(0);
@@ -32,4 +33,7 @@ assert.equal(network.underpassWall(0,-20,floorAt(-18)+2,{x:0,z:-30,y:floorAt(-18
 assert.equal(network.underpassWall(side+.2,0,deck+2,{x:0,z:0,y:deck+2}),false,'Traffic on the road above is unaffected');
 // Geometry: walls, slab and headwalls are emitted as structure.
 {const scene=new T.Scene();createRoadNetwork(scene,{elements},{ground,channel:()=>null},ground,{asphalt:null,concrete:null},null,null);let structure=0;scene.traverse(o=>{if(o.isMesh&&o.userData.surface==='structure')structure+=o.geometry.attributes.position.count});assert.ok(structure>=36*12,'Underpass shell geometry is built')}
-console.log('PASS: short underpasses built as connected roads, straight dug floors, clearance over them with design-grade ramps, height-aware surfaces, graded terrain, shell walls and geometry.');
+// A long public bored tunnel (like the 465m Terrace Tunnel) is built through the hill: straight floor between portal levels, hill left above.
+{const hill=(x,z)=>60*Math.exp(-(z*z)/(2*120*120)),bore=make([way(7,'motorway',[[0,-520,40],[0,-250,41]]),way(8,'motorway',[[0,-250,41],[0,0],[120,250,42]],{tunnel:'yes',layer:'-2',name:'Terrace Motorway Tunnel'}),way(9,'motorway',[[0,250,42],[0,520,43]])],hill),t=bore.roads.find(r=>r.tunnel);
+assert.ok(t&&t.length>450,'A long public road tunnel is built as a road');const mid=bore.walkHeight(0,0,t.floorStart+2);assert.ok(Math.abs(mid-(t.floorStart+t.floorEnd)/2)<.1&&mid<hill(0,0)-40,`Tunnel floor runs straight under the hill (${mid.toFixed(1)}m under ${hill(0,0)}m)`);assert.ok(Math.abs(bore.ground(0,0)-hill(0,0))<.5,'The hill terrain stays above the tunnel instead of being pulled down to it');const inside=bore.underpass(0,0,mid+1);assert.ok(inside&&Math.abs(inside.roof-mid-t.headroom)<.2&&!bore.underpass(0,0,hill(0,0)+2)&&!bore.underpass(0,-400,bore.walkHeight(0,-400)+1),'Underpass lookup reports the roof inside the tunnel only, for the chase camera');const d=Math.hypot(120,250),n2=[-250/d,120/d],m=[-1+n2[0],n2[1]],ml=Math.hypot(...m),half=(t.pavementWidth/2)*.9/Math.cos(Math.atan2(120,250)/2),corner=[m[0]/ml*half,m[1]/ml*half];assert.ok(bore.underpass(corner[0],corner[1],bore.walkHeight(0,0,mid+2)+1),'The outside of a bend in a curving tunnel is still under the roof')}
+console.log('PASS: long public road tunnels built through hills, short underpasses built as connected roads, straight dug floors, clearance over them with design-grade ramps, height-aware surfaces, graded terrain, shell walls and geometry.');

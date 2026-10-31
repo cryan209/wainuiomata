@@ -41,10 +41,11 @@ function solveStreetGrades(roads,hubs,sample,minimum){
  // Bridge decks keep their inferred clearance; approaches climb to meet them at design grade without dragging up parallel roads below.
  const pins=[];for(let n=0;n<total;n++)if(pin[n]>-Infinity)pins.push(n);const moved=relax(heights,1,{sideways:false,costs:ramp,seeds:pins});
  // Underpass floors are exact, and roads over them rise to their clearance (opposing carriageways of a divided road together).
+ // A long bored tunnel's portal can sit above an approach graded into its cutting, so approaches also rise to meet a floor, at the same grades.
  // The cut into each portal and the lift over each crossing fade by the approach grade per metre relative to the graded road, never steeper than
  // its limit: a plain 8% ramp on a steeper hill would never meet the road again and spread along the whole street.
  if(exact.size||clearance.size){const locked=new Uint8Array(total),fade=(sign,base)=>Float64Array.from(cost,(c,e)=>Math.min(c,sign*(base[dest[e^1]]-base[dest[e]])+ramp[e]));
-  if(exact.size){const base=Float64Array.from(heights),seeds=new Set(exact.keys());for(const[n,h]of exact){heights[n]=h;locked[n]=1;for(let e=head[n];e!==-1;e=next[e])if(!lateral[e])seeds.add(dest[e])}relax(heights,-1,{sideways:false,costs:fade(-1,base),seeds:[...seeds],locked})}
+  if(exact.size){const base=Float64Array.from(heights),seeds=new Set(exact.keys());for(const[n,h]of exact){heights[n]=h;locked[n]=1;for(let e=head[n];e!==-1;e=next[e])if(!lateral[e])seeds.add(dest[e])}relax(heights,-1,{sideways:false,costs:fade(-1,base),seeds:[...seeds],locked});relax(heights,1,{sideways:false,costs:fade(1,base),seeds:[...seeds],locked})}
   if(clearance.size){const base=Float64Array.from(heights),seeds=[];for(const[n,h]of clearance)if(h>heights[n]&&!locked[n]){heights[n]=h;seeds.push(n)}relax(heights,1,{sideways:false,costs:fade(1,base),seeds,locked})}}
  for(const{r,i,row}of entries)r.gradeProfiles[i]=Float64Array.from(row,n=>heights[n]);for(const hub of hubs)hub.height=heights[canonical.get(hub.group.id)];for(const r of roads)if(r.type!=='steps')r.profiles=null;return{nodes:total,raised:moved,graphBytes:head.byteLength+dest.byteLength+next.byteLength+cost.byteLength*2+lateral.byteLength+heights.byteLength*4,
   // Nearest graded street centre sample, for footpaths that run alongside.

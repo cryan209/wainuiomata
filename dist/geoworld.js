@@ -6,7 +6,7 @@ import {applyGroundImagery} from './ground-imagery.js?v=regional-ground-65';
 import {applyNightLight} from './night-lights.js?v=night-walls-73';
 import {createTerrainStream} from './terrain-stream.js?v=far-hills-69';
 import {makeTextures} from './textures.js?v=intersections-50';
-import {createHydrology,createRoadNetwork} from './water-roads.js?v=road-underpass-1';
+import {createHydrology,createRoadNetwork} from './water-roads.js?v=long-tunnels-84';
 import {facadeProfile,facadeStyle,FACADE_COUNT} from './appearance.js';
 import {createTunnels} from './tunnels.js?v=perf-59';
 import {addGreenery} from './greenery.js?v=smooth-junctions-25';
@@ -83,7 +83,8 @@ export async function loadWorld(scene){
  const cells=new Map();for(const b of buildings){let r=b.rings[0];b.minX=Math.min(...r.map(p=>p[0]));b.maxX=Math.max(...r.map(p=>p[0]));b.minZ=Math.min(...r.map(p=>p[1]));b.maxZ=Math.max(...r.map(p=>p[1]));for(let i=Math.floor((b.minX-1)/25);i<=Math.floor((b.maxX+1)/25);i++)for(let j=Math.floor((b.minZ-1)/25);j<=Math.floor((b.maxZ+1)/25);j++){let key=i+','+j;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(b)}}
  function inside(r,x,z){let found=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const [xi,zi]=r[i],[xj,zj]=r[j];if((zi>z)!==(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)found=!found}return found}
  function freeBuildings(x,z){if(!canopies.free(x,z))return false;for(const b of cells.get(Math.floor(x/25)+','+Math.floor(z/25))||[]){if(inside(b.rings[0],x,z)&&!b.rings.slice(1).some(r=>inside(r,x,z)))return false;for(const r of b.rings)for(let i=1;i<r.length;i++){const a=r[i-1],c=r[i],dx=c[0]-a[0],dz=c[1]-a[1],t=T.MathUtils.clamp(((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1),0,1);if(Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz)<.35)return false}}return true}
- function freeSpace(x,z,y,from){if(tunnels&&from&&!tunnels.canMove(x,z,y,from))return false;if(from&&y!==undefined&&network.underpassWall(x,z,y,from))return false;return fences.free(x,z)&&freeBuildings(x,z)&&region.free(x,z)}
+ // Below a tunnel or underpass roof only its walls block; buildings, fences and other surface obstacles are overhead.
+ function freeSpace(x,z,y,from){if(tunnels&&from&&!tunnels.canMove(x,z,y,from))return false;if(from&&y!==undefined&&network.underpassWall(x,z,y,from))return false;if(y!==undefined&&network.underpass(x,z,y))return true;return fences.free(x,z)&&freeBuildings(x,z)&&region.free(x,z)}
  function free(x,z,y,from){return freeSpace(x,z,y,from)&&(coast.isLand(x,z)||network.onBridge(x,z,y)||railways.onBridge(x,z)||tunnels?.at(x,z,y))&&(!hydro.waterAt(x,z)||network.onBridge(x,z,y)||railways.onBridge(x,z)||tunnels?.at(x,z,y))}
  function walkHeight(x,z,y){const tunnel=y!==undefined?tunnels?.walkHeight(x,z,y):null;if(tunnel!==null&&tunnel!==undefined)return tunnel;const road=network.walkHeight(x,z,y),rail=railways.walkHeight(x,z,y);return rail===null||rail===undefined?road:y!==undefined&&Math.abs(road-(y-2))<=Math.abs(rail-(y-2))?road:rail}
  const fences=createPropertyFences(scene,{network,ground,hydro,coast,openSpaces,clear:(x,z)=>freeBuildings(x,z)&&region.free(x,z)});
