@@ -563,3 +563,16 @@ Rebuild with `/private/tmp/wainui-gis/bin/python`, in this order:
 5. `scripts/expand_north_east_rail.py`
 
 `python tests/north-east.py` checks dry land and sea at each town, preserved earlier samples, streets and buildings per district, one far row per building, the station list, connected routes from Wellington to each terminus, and the 3% grade on new track. `tests/regional-rivers.mjs`, `tests/remutaka.py` and `tests/wellington.py` now pin their checks to the extents they were written for.
+
+## Smaller startup download
+
+The startup download is about 48 MB (it was about 72 MB, both as gzipped by GitHub Pages).
+
+- **WebP images.** The roof aerials, the two ground overviews and the facade, surface and foliage atlases are WebP instead of JPEG/PNG: 31 MB becomes 19 MB, and the three atlases alone go from 9.4 MB to 1.8 MB. The imagery scripts (`prepare_roof_imagery.py`, `prepare_wide_imagery.py`, `prepare_regional_ground.py`, `prepare_outer_imagery.py`) now write WebP. Streamed ground tiles stay JPEG.
+- **Packed terrain and distant buildings.** `scripts/pack_runtime.py` writes `regional-terrain.pack` and `regional-far.pack`, which the game loads through `dist/terrain-pack.js`.
+  - The terrain pack is lossless: row differences in byte planes, 12.6 MB becomes 6.6 MB.
+  - The distant-building pack is quantised to 0.1 m, 5.1 MB becomes 2.0 MB.
+  - The `.bin` files stay the build scripts' source. Rerun `pack_runtime.py` after any terrain or building rebuild; `node tests/runtime-packs.mjs` fails while a pack is stale.
+- **Compact road map.** `lib/regional_map.save_map` rounds coordinates to 1 cm and drops OSM bookkeeping tags the game never reads (`source`, `attribution`, `LINZ:*`, `note`, …). This saves about 1.2 MB across the road map and waterways.
+
+Building the world after download still takes about 28 s on a fast machine. The biggest costs are the region-wide road network (about 9 s: profiles, grades and terrain shoulders for all 64 000 ways) and street furniture planned across the whole region (about 5 s). Streaming those by area would be the next step.

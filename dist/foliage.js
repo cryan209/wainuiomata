@@ -2,7 +2,7 @@ import * as T from './vendor/three.js';
 
 // Crossed alpha-tested cards give small leaf silhouettes without transparent sorting.
 export async function createFoliage(){
- const map=await new T.TextureLoader().loadAsync('./assets/foliage-crowns-v3.png');
+ const map=await new T.TextureLoader().loadAsync('./assets/foliage-crowns-v3.webp');
  map.colorSpace=T.SRGBColorSpace;map.magFilter=T.LinearFilter;map.minFilter=T.LinearMipmapLinearFilter;map.anisotropy=4;
  const positions=[],uv=[];
  function card(points){for(const i of [0,1,2,0,2,3]){positions.push(...points[i]);uv.push(...[[0,0],[1,0],[1,1],[0,1]][i])}}

@@ -21,7 +21,7 @@ for n,(row,col,im) in enumerate(concurrent.futures.ThreadPoolExecutor(8).map(til
 left=ox-2048*resolution;top=oy+2048*resolution
 mosaic_left=origin[0]+col0*span;mosaic_top=origin[1]-row0*span
 cropx=round((left-mosaic_left)/resolution);cropy=round((mosaic_top-top)/resolution)
-image=mosaic.crop((cropx,cropy,cropx+4096,cropy+4096));image.save(ROOT/'dist/roof-aerial-2025.jpg',quality=91,optimize=True)
+image=mosaic.crop((cropx,cropy,cropx+4096,cropy+4096));image.save(ROOT/'dist/roof-aerial-2025.webp',quality=84,method=6)  # WebP: about two-thirds of the JPEG size
 actualleft=mosaic_left+cropx*resolution;actualtop=mosaic_top-cropy*resolution
-info={'image':'roof-aerial-2025.jpg','width':4096,'height':4096,'metresPerPixel':resolution,'minX':actualleft-ox,'maxZ':oy-(actualtop-4096*resolution),'maxX':actualleft+4096*resolution-ox,'minZ':oy-actualtop,'source':'Hutt City 2025 aerial orthophotography','capture':'29 March 2025 (urban imagery, per service metadata)','service':SERVICE,'licence':'CC BY 4.0','attribution':'© NZ Aerial Surveys and Hutt City Council. Reused under CC BY 4.0. Cropped, resampled and mapped onto derived roof geometry.'}
+info={'image':'roof-aerial-2025.webp','width':4096,'height':4096,'metresPerPixel':resolution,'minX':actualleft-ox,'maxZ':oy-(actualtop-4096*resolution),'maxX':actualleft+4096*resolution-ox,'minZ':oy-actualtop,'source':'Hutt City 2025 aerial orthophotography','capture':'29 March 2025 (urban imagery, per service metadata)','service':SERVICE,'licence':'CC BY 4.0','attribution':'© NZ Aerial Surveys and Hutt City Council. Reused under CC BY 4.0. Cropped, resampled and mapped onto derived roof geometry.'}
 (ROOT/'dist/roof-imagery.json').write_text(json.dumps(info,indent=2));print(json.dumps(info,indent=2),flush=True)

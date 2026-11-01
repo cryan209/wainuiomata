@@ -32,8 +32,8 @@ ok=(ref.min(axis=2)<235)&(src.min(axis=2)<235)
 for c in range(3):gain=ref[...,c][ok].std()/src[...,c][ok].std();a[...,c]=(a[...,c]-src[...,c][ok].mean())*gain+ref[...,c][ok].mean()
 # Near-white, unsaturated pixels are service no-data; keep them pure white so the shader keeps procedural ground.
 white=np.asarray(outer).min(axis=2)>235;a=np.clip(a,0,255).astype(np.uint8);a[white&(np.asarray(outer).max(axis=2)-np.asarray(outer).min(axis=2)<12)]=255
-Image.fromarray(a).save(D/'ground-overview-outer.jpg',quality=82,optimize=True)
+Image.fromarray(a).save(D/'ground-overview-outer.webp',quality=80,method=6)
 ground=load('ground-regional.json');ground.pop('overviewEast',None);(D/'ground-overview-east.jpg').unlink(missing_ok=True)
-ground['overviewOuter']={'image':'ground-overview-outer.jpg','minX':m['minX'],'minZ':m['minZ'],'maxX':m['minX']+w*RES,'maxZ':m['minZ']+h*RES,'width':w,'height':h,'metresPerPixel':RES,'source':'GWRC Aerial_basemap_2021 (GWRC, WAGGIS, LINZ, AAM NZ; 2021), CC BY 4.0. Resampled to 20m/pixel.'}
+ground['overviewOuter']={'image':'ground-overview-outer.webp','minX':m['minX'],'minZ':m['minZ'],'maxX':m['minX']+w*RES,'maxZ':m['minZ']+h*RES,'width':w,'height':h,'metresPerPixel':RES,'source':'GWRC Aerial_basemap_2021 (GWRC, WAGGIS, LINZ, AAM NZ; 2021), CC BY 4.0. Resampled to 20m/pixel.'}
 (D/'ground-regional.json').write_text(json.dumps(ground,separators=(',',':')))
-print('Outer overview',w,'x',h,round((D/'ground-overview-outer.jpg').stat().st_size/1024),'KiB; blank',round(float((a.min(axis=2)==255).mean())*100,1),'%',flush=True)
+print('Outer overview',w,'x',h,round((D/'ground-overview-outer.webp').stat().st_size/1024),'KiB; blank',round(float((a.min(axis=2)==255).mean())*100,1),'%',flush=True)

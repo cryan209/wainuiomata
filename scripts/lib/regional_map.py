@@ -14,8 +14,18 @@ def load_map(name='regional-map',dist=DIST):
  for e in elements:del e['i']
  return{'bounds':index['bounds'],'elements':elements}
 
+# OSM bookkeeping tags the game never reads (dist/*.js has no use of them); dropped on save to shrink the download.
+UNUSED=('attribution','source','note','fixme','FIXME','description','check_date','survey:date','created_by','wikidata','wikipedia','wikimedia_commons','mapillary','LINZ:','LINZ2OSM:')
+
+def compact(e):
+ """Drop unused tags and round coordinates to 1cm (OSM positions are not more precise than that)."""
+ tags={k:v for k,v in e.get('tags',{}).items() if not any(k==u or k.startswith(u if u.endswith(':') else u+':') for u in UNUSED)}
+ geometry=[{**p,'x':round(p['x'],2),'z':round(p['z'],2)} for p in e['geometry']]
+ return{**e,'tags':tags,'geometry':geometry}
+
 def save_map(data,name='regional-map',dist=DIST):
  folder=dist/name;folder.mkdir(exist_ok=True);cells={}
+ data={**data,'elements':[compact(e) for e in data['elements']]}
  for i,e in enumerate(data['elements']):
   g=e['geometry'];x=sum(p['x'] for p in g)/len(g);z=sum(p['z'] for p in g)/len(g)
   cells.setdefault((math.floor(x/CELL),math.floor(z/CELL)),[]).append({**e,'i':i})

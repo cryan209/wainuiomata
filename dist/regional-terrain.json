@@ -15,5 +15,10 @@
   "datum": 90.849,
   "verticalScale": 1,
   "sources": "LINZ Hutt City LiDAR 2025; Wellington LiDAR 2013\u20132014; national 8m contour DEM for gaps; south/east extension: LINZ national contour DEM (8m source / 25m grid); south/east extension: LINZ national contour DEM (8m source / 25m grid); Upper Hutt: LINZ national contour DEM (8m source / 25m grid); Wellington City: LINZ 8m contour DEM on a 25m grid; Remutaka Range to Featherston: LINZ national contour DEM (8m source / 25m grid); Porirua, K\u0101piti Coast and Wairarapa: LINZ national contour DEM (8m source / 25m grid)",
-  "missingOffshoreSamples": 1698599
+  "missingOffshoreSamples": 1698599,
+  "packed": {
+    "file": "regional-terrain.pack",
+    "encoding": "int16 row differences (first column: difference from the row above); low bytes, then high bytes",
+    "source": "regional-terrain.bin"
+  }
 }

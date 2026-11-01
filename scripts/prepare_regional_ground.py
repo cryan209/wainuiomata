@@ -32,7 +32,10 @@ def clean(image):
  return Image.fromarray(a.astype(np.uint8)),float(blank.mean())
 
 def save(image,target,quality):
- temp=target.with_suffix('.part.jpg');image.save(temp,quality=quality,optimize=True,progressive=True);temp.replace(target)
+ temp=target.with_suffix('.part'+target.suffix)
+ if target.suffix=='.webp':image.save(temp,'WEBP',quality=quality,method=6)
+ else:image.save(temp,quality=quality,optimize=True,progressive=True)
+ temp.replace(target)
 
 # 1. Overview mosaic over the whole regional terrain, 8m per pixel, fetched as 2048px pieces.
 OVERVIEW_RES=8;ow,oh=math.ceil((MAX_X-MIN_X)/OVERVIEW_RES),math.ceil((MAX_Z-MIN_Z)/OVERVIEW_RES);overview=Image.new('RGB',(ow,oh),(255,255,255))
@@ -40,7 +43,7 @@ for py in range(0,oh,2048):
  for px in range(0,ow,2048):
   w,h=min(2048,ow-px),min(2048,oh-py);left,top=MIN_X+px*OVERVIEW_RES,MIN_Z+py*OVERVIEW_RES
   overview.paste(export(left,top,left+w*OVERVIEW_RES,top+h*OVERVIEW_RES,w,h,CACHE/f'overview_{px}_{py}.jpg'),(px,py))
-overview,_=clean(overview);save(overview,DIST/'ground-overview.jpg',84)
+overview,_=clean(overview);save(overview,DIST/'ground-overview.webp',82)  # the startup overview is WebP; streamed tiles stay JPEG
 overviewBlank=(np.asarray(overview).min(axis=2)==255)
 def blank_share(left,top,right,bottom):
  a=overviewBlank[max(0,int((top-MIN_Z)/OVERVIEW_RES)):int(math.ceil((bottom-MIN_Z)/OVERVIEW_RES)),max(0,int((left-MIN_X)/OVERVIEW_RES)):int(math.ceil((right-MIN_X)/OVERVIEW_RES))]
@@ -120,6 +123,6 @@ with concurrent.futures.ThreadPoolExecutor(6) as pool:
 REPLACED.write_text(json.dumps(sorted(replaced)));print('GWRC 2021 replacements',len(replaced),flush=True)
 
 source='Hutt City Aerials_2025 export service: © NZ Aerial Surveys / Hutt City Council (2025 urban); NZ Aerial Surveys for GWRC (2025/26 rural). Tiles marked gwrc-2021: GWRC Aerial_basemap_2021 (GWRC, WAGGIS, LINZ, AAM NZ; 2021). CC BY 4.0. Cropped, resampled, no-data set to white.'
-(DIST/'ground-regional.json').write_text(json.dumps({'source':source,'service':SERVICE,'overview':{'image':'ground-overview.jpg','minX':MIN_X,'minZ':MIN_Z,'maxX':MIN_X+ow*OVERVIEW_RES,'maxZ':MIN_Z+oh*OVERVIEW_RES,'width':ow,'height':oh,'metresPerPixel':OVERVIEW_RES},'valley':{'span':VALLEY_SPAN,'tiles':valleyTiles},'urban':{'span':URBAN_SPAN,'tiles':urbanTiles}},separators=(',',':')))
+(DIST/'ground-regional.json').write_text(json.dumps({'source':source,'service':SERVICE,'overview':{'image':'ground-overview.webp','minX':MIN_X,'minZ':MIN_Z,'maxX':MIN_X+ow*OVERVIEW_RES,'maxZ':MIN_Z+oh*OVERVIEW_RES,'width':ow,'height':oh,'metresPerPixel':OVERVIEW_RES},'valley':{'span':VALLEY_SPAN,'tiles':valleyTiles},'urban':{'span':URBAN_SPAN,'tiles':urbanTiles}},separators=(',',':')))
 size=lambda d:sum(p.stat().st_size for p in (DIST/d).glob('*.jpg'))/1024**2
-print('Regional ground ready: overview',round((DIST/'ground-overview.jpg').stat().st_size/1024**2,1),'MiB; valley',round(size('ground-valley'),1),'MiB; urban',round(size('ground-urban'),1),'MiB',flush=True)
+print('Regional ground ready: overview',round((DIST/'ground-overview.webp').stat().st_size/1024**2,1),'MiB; valley',round(size('ground-valley'),1),'MiB; urban',round(size('ground-urban'),1),'MiB',flush=True)
