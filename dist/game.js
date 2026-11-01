@@ -12,7 +12,7 @@ import {createInteriors} from './interiors.js?v=house-interiors-95';
 import {createBusService} from './bus-service.js?v=textured-peds-70';
 import {createWaterWorld} from './water-world.js?v=regional-tunnels-101';
 import {loadWorld} from './geoworld.js?v=train-motion-1';
-import {createSound} from './sound.js?v=train-motion-1';
+import {createSound} from './sound.js?v=radio-ads-2';
 import {createPerformanceHUD} from './performance.js?v=utility-scenery-93';
 import {addSky} from './textures.js';
 import {createDayNight} from './day-night.js?v=night-vision-75';

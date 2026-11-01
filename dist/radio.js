@@ -6,7 +6,7 @@ export function createRadio(ctx,output,{onCaption=()=>{},fetchAudio=globalThis.f
  const loaded=(async()=>{
   if(!fetchAudio||!ctx.decodeAudioData)return;
   try{
-   const response=await fetchAudio(new URL('./audio/radio/manifest.json',import.meta.url),{signal:controller.signal});if(!response.ok)return;
+   const response=await fetchAudio(new URL('./audio/radio/manifest.json?v=radio-ads-2',import.meta.url),{signal:controller.signal});if(!response.ok)return;
    const manifest=await response.json();
    const results=await Promise.allSettled(manifest.map(async ad=>{const res=await fetchAudio(new URL(`./${ad.file}`,import.meta.url),{signal:controller.signal});if(!res.ok)throw Error('Radio asset unavailable');const buffer=await ctx.decodeAudioData(await res.arrayBuffer());return {...ad,buffer}}));
    if(!disposed)ready=results.filter(r=>r.status==='fulfilled').map(r=>r.value);

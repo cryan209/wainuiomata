@@ -7,11 +7,39 @@
     "duration": 9.152154
   },
   {
+    "id": "motors",
+    "title": "Hill Road Motors",
+    "text": "Hill Road Motors. Is your car making a noise you have started describing as normal? Bring it in. We speak fluent rattle, squeak, and mysterious clunk. Hill Road Motors. We will have a listen.",
+    "file": "audio/radio/motors.mp3",
+    "duration": 12.423583
+  },
+  {
+    "id": "video",
+    "title": "Saturday Video",
+    "text": "Saturday Video. Three aisles of action, one shelf of romance, and a return slot that never judges your choices. Grab something for tonight. Saturday Video. Please rewind. Yes, even the good bits.",
+    "file": "audio/radio/video.mp3",
+    "duration": 12.960726
+  },
+  {
     "id": "cycle",
     "title": "Valley Cycle Works",
     "text": "Chain making more noise than your radio? Valley Cycle Works can sort that. Punctures, tune ups, and friendly advice. Valley Cycle Works. Keep the valley rolling.",
     "file": "audio/radio/cycle.mp3",
     "duration": 11.161043
+  },
+  {
+    "id": "garden",
+    "title": "Green Gum Garden Centre",
+    "text": "Green Gum Garden Centre. Bought one plant and somehow came home with twelve? We understand. Pots, seedlings, and advice for the plant you swear was fine yesterday. Green Gum. Let the garden take over.",
+    "file": "audio/radio/garden.mp3",
+    "duration": 12.553787
+  },
+  {
+    "id": "pizza",
+    "title": "Harbour Pizza Hotline",
+    "text": "Harbour Pizza Hotline. Feeding a flat, a family, or just a very ambitious evening? We have the slices. Pick your toppings and leave the dishes in the cupboard. Harbour Pizza. Dinner, in a box.",
+    "file": "audio/radio/pizza.mp3",
+    "duration": 12.497506
   },
   {
     "id": "cafe",
@@ -21,11 +49,39 @@
     "duration": 7.674694
   },
   {
+    "id": "laundry",
+    "title": "The Sock Exchange",
+    "text": "The Sock Exchange Laundry. We cannot promise to find the missing sock. Nobody can. But we can sort the muddy trousers, mystery towels, and that enormous duvet. The Sock Exchange. A fresh start for your washing basket.",
+    "file": "audio/radio/laundry.mp3",
+    "duration": 13.820907
+  },
+  {
+    "id": "computers",
+    "title": "Valley Byte Computers",
+    "text": "Valley Byte Computers. Your computer has stopped responding. Your cousin has stopped answering. Time to call us. Repairs, upgrades, and a patient explanation of which cable goes where. Valley Byte. Save your work. Then come see us.",
+    "file": "audio/radio/computers.mp3",
+    "duration": 15.885306
+  },
+  {
     "id": "records",
     "title": "Valley Records",
     "text": "Still rewinding the same cassette? Find your next favourite at Valley Records. New discoveries, old favourites, and plenty of questionable album covers. Valley Records. Give your dashboard something new.",
     "file": "audio/radio/records.mp3",
     "duration": 13.376825
+  },
+  {
+    "id": "hardware",
+    "title": "Ridge and Rafter Hardware",
+    "text": "Ridge and Rafter Hardware. Started a small job on Saturday and now the kitchen has no door? We have the screws you dropped, the hinge you need, and a slightly bigger hammer. Ridge and Rafter. Finish what you started.",
+    "file": "audio/radio/hardware.mp3",
+    "duration": 12.425488
+  },
+  {
+    "id": "barber",
+    "title": "Queen Street Clippers",
+    "text": "Queen Street Clippers. A little off the top, a tidy round the ears, and absolutely no guarantees about the weather outside. Walk in looking windswept. Walk out looking deliberately styled. Queen Street Clippers. Your hat can have the afternoon off.",
+    "file": "audio/radio/barber.mp3",
+    "duration": 14.449433
   },
   {
     "id": "fish",
@@ -35,10 +91,38 @@
     "duration": 10.089433
   },
   {
+    "id": "roofing",
+    "title": "Raincheck Roofing",
+    "text": "Raincheck Roofing. If you have named the bucket under that leak, it is time to give us a call. Repairs, gutters, and fewer indoor water features. Raincheck Roofing. Keep the rain where it belongs. Outside.",
+    "file": "audio/radio/roofing.mp3",
+    "duration": 13.37746
+  },
+  {
+    "id": "pancakes",
+    "title": "Petone Pancake Parlour",
+    "text": "Petone Pancake Parlour. Breakfast is a state of mind, especially after lunch. Fluffy stacks, hot coffee, and one more drizzle of syrup than you meant to ask for. Petone Pancake Parlour. Take a seat. We will get the pan on.",
+    "file": "audio/radio/pancakes.mp3",
+    "duration": 14.563991
+  },
+  {
     "id": "station",
     "title": "Valley FM",
     "text": "From the hill road to the harbour. You are listening to Valley F M. Locally imagined. Slightly out of time. Stay with us for another tune from the valley.",
     "file": "audio/radio/station.mp3",
     "duration": 8.444218
+  },
+  {
+    "id": "lodge",
+    "title": "Last Stop Lodge",
+    "text": "Last Stop Lodge. Taking the long way home has become taking the really long way home? Stay the night. A comfy bed, a kettle, and somewhere to put your feet up. Last Stop Lodge. You can be early tomorrow.",
+    "file": "audio/radio/lodge.mp3",
+    "duration": 12.541043
+  },
+  {
+    "id": "tyres",
+    "title": "Wonky Wheel Tyres",
+    "text": "Wonky Wheel Tyres. Despite the name, we do prefer them round. New tyres, wheel balancing, and advice that does not go round in circles. Wonky Wheel. For a smoother trip over the hill and a quieter passenger seat.",
+    "file": "audio/radio/tyres.mp3",
+    "duration": 13.945941
   }
 ]
