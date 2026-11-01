@@ -23,7 +23,19 @@ export function regionalDestinations(world){
   ['karori','Wellington · Karori','Karori Road',-17307,2191],
   ['island-bay','Wellington · Island Bay','The Parade',-14587,8466],
   ['miramar','Wellington · Miramar','Miramar Avenue',-10929,5654],
-  ['kilbirnie','Wellington · Kilbirnie','Bay Road',-12612,6063]
+  ['kilbirnie','Wellington · Kilbirnie','Bay Road',-12612,6063],
+  // Northern suburbs, Porirua, the Kāpiti Coast and the Wairarapa (scripts/expand_north_east_map.py).
+  ['johnsonville','Johnsonville · Johnsonville Road','Johnsonville Road',-11448,-4593],
+  ['tawa','Tawa · Main Road','Main Road',-9818,-10656],
+  ['makara','Mākara · Makara Road','Makara Road',-19355,-5077],
+  ['porirua','Porirua · Lyttelton Avenue','Lyttelton Avenue',-8465,-14427],
+  ['titahi-bay','Titahi Bay · Bay Drive','Bay Drive',-8846,-17627],
+  ['plimmerton','Plimmerton · Steyne Avenue','Steyne Avenue',-6239,-20126],
+  ['paekakariki','Paekākāriki · The Parade','The Parade',1139,-30570],
+  ['paraparaumu-beach','Paraparaumu Beach · Marine Parade','Marine Parade',3993,-41113],
+  ['waikanae','Waikanae · Te Moana Road','Te Moana Road',10985,-42621],
+  ['greytown','Greytown · Main Street','Main Street',43667,-18972],
+  ['martinborough','Martinborough · Memorial Square','Memorial Square',43258,-3755]
  ]){const hit=nearestRoad(road,{x,z});if(!hit||hit.d>900)continue;for(const side of [1,-1]){const offset=hit.width/2+1.2,px=hit.x+Math.cos(hit.yaw)*offset,pz=hit.z-Math.sin(hit.yaw)*offset;if(world.coast.isLand(px,pz)&&(world.free?.(px,pz)??true)){result.set(id,{name,x:px,z:pz,yaw:hit.yaw,pitch:-.06});break}}}
  const roofView=result.get('trentham');if(roofView)result.set('upper-roofs',{name:'Upper Hutt · Roof view',x:roofView.x+90,z:roofView.z+80,yaw:Math.atan2(90,80),pitch:-.55,drone:true});
  for(const [id,name,road,anchor]of [

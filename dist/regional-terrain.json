@@ -1,19 +1,19 @@
 {
-  "width": 2321,
-  "height": 1701,
+  "width": 2801,
+  "height": 2521,
   "step": 25,
   "minX": -24000,
-  "maxX": 34000,
-  "minZ": -23500,
+  "maxX": 46000,
+  "minZ": -44000,
   "maxZ": 19000,
   "bounds": {
     "minX": -23500,
-    "maxX": 33500,
-    "minZ": -23000,
+    "maxX": 45500,
+    "minZ": -43500,
     "maxZ": 18500
   },
   "datum": 90.849,
   "verticalScale": 1,
-  "sources": "LINZ Hutt City LiDAR 2025; Wellington LiDAR 2013\u20132014; national 8m contour DEM for gaps; south/east extension: LINZ national contour DEM (8m source / 25m grid); south/east extension: LINZ national contour DEM (8m source / 25m grid); Upper Hutt: LINZ national contour DEM (8m source / 25m grid); Wellington City: LINZ 8m contour DEM on a 25m grid; Remutaka Range to Featherston: LINZ national contour DEM (8m source / 25m grid)",
-  "missingOffshoreSamples": 881529
+  "sources": "LINZ Hutt City LiDAR 2025; Wellington LiDAR 2013\u20132014; national 8m contour DEM for gaps; south/east extension: LINZ national contour DEM (8m source / 25m grid); south/east extension: LINZ national contour DEM (8m source / 25m grid); Upper Hutt: LINZ national contour DEM (8m source / 25m grid); Wellington City: LINZ 8m contour DEM on a 25m grid; Remutaka Range to Featherston: LINZ national contour DEM (8m source / 25m grid); Porirua, K\u0101piti Coast and Wairarapa: LINZ national contour DEM (8m source / 25m grid)",
+  "missingOffshoreSamples": 1698599
 }

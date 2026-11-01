@@ -4,8 +4,10 @@ import * as T from '../dist/vendor/three.js';
 import {createHydrology} from '../dist/rivers.js';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../dist/'+name,import.meta.url)));
+// The lower Hutt catchment as first imported. The north/east grid adds upper headwaters (Eastern/Western Hutt, upper Akatārawa).
+const HUTT_CATCHMENT=['213661648','213661652','29103731','30261394','601472602','29085609','216991480'];
 const features=read('regional-waterways.json').filter(f=>
- /Hutt River|Mangaroa River|Whakatīkei River|Akatārawa River|Pākuratahi River/.test(f.tags.name||'')&&f.tags.waterway==='river');
+ /Hutt River|Mangaroa River|Whakatīkei River|Akatārawa River|Pākuratahi River/.test(f.tags.name||'')&&f.tags.waterway==='river'&&HUTT_CATCHMENT.includes(f.id));
 const meta=read('regional-terrain.json'),data=fs.readFileSync(new URL('../dist/regional-terrain.bin',import.meta.url));
 const terrain=new Int32Array(data.buffer,data.byteOffset,data.byteLength/4);
 function raw(x,z){

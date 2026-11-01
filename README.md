@@ -525,3 +525,41 @@ Waterloo's broad station roof (LINZ outline 3468908) renders as an open canopy w
 Rail beds are protected after road and junction grading, preventing bridge approaches from filling the track corridor. Local terrain shader cuts also keep coarse terrain triangles out of the railway beneath overbridges. Railway subways and their stair branches join at every mapped node, including branches in the middle of a way, with roof slabs below the tracks. Headwalls and bridge structures are excluded from the train envelope. Platform surfaces follow local track grades, catenary poles avoid adjacent tracks, and station signs/travel entries stand beside the railway.
 
 Run `node tests/rail-stations.mjs` for Waterloo's streamed open roof/collision and far model, roof footprint coverage, support/electrical clearance, platform grades, subway joints, rendered headwalls and the map-wide overbridge rail-bed audit. Existing bridge, underpass, tunnel, train and building-roof regressions remain applicable.
+
+## Parks, playgrounds and dog parks
+
+Mapped parks, reserves, playgrounds, pitches and dog exercise areas now carry furniture that streams in within about 420 m. Lawns get benches facing inward from the edge, bins and picnic tables, and named parks get a green name sign on the side nearest a road. Playgrounds get a rubber safety surface, a slide tower and swings, plus a spring rider where there is room. Pitches are fitted with an oriented rectangle: larger fields get rugby posts with padded bases and 22 m lines, and smaller fields get football goals, a centre circle and penalty boxes. Benches, play equipment, posts and fences block walking and driving, and drone flight passes over them. Placement is procedural and illustrative, not a survey of council assets.
+
+`dist/dog-parks.json` packages 15 OpenStreetMap `leisure=dog_park` areas across Wellington and the Hutt Valley. It also includes Les Dalton Dog Park on Waiu Street, Wainuiomata, which is not mapped in OSM. That park's main enclosure and separate small-dog area are traced from fence lines in the Hutt City Aerials_2025 photography (© NZ Aerial Surveys and Hutt City Council, CC BY 4.0). It sits on the left as you come down Wainuiomata Hill Road, beside the shared path at the foot of Waiu Street ([Hutt City Libraries](https://huttcitylibraries.co.nz/2021/08/12/the-new-les-dalton-dog-park-wainuiomata-dog-clubs/)). Dog areas join the open-space set, so trees stay off them. Each fenced area has chain-link panels with a single open gate, and a sign, bag dispenser, bin, dog water fountain and benches at the entrance. Open beach and zone areas stay unfenced. Agility equipment is not depicted.
+
+Near a dog park, low-poly dogs in varied coats and sizes trot, sniff, sit, chase each other and do zoomies inside the fence. They come over and wag at you when you walk in. Small dogs stay in the small-dog area. One or two owners stroll nearby and keep an eye on their dogs. Dogs and owners are released after you leave. Controls → Explore the region adds Les Dalton Dog Park · Waiu Street and Hikoikoi Reserve Dog Park · Petone, and the minimap outlines nearby dog areas. Rebuild with `python scripts/prepare_dog_parks.py` (pyproj, using the retained OSM caches). Run `node tests/parks.mjs` to check the fence and gate, small-dog separation, pitch markings and goals, playground equipment, collisions, dog containment and streaming cleanup.
+
+## Wainuiomata Hill Road lighting
+
+Wainuiomata Hill Road is lit along its 80 km/h divided section, where previously only its 50 km/h ends were. Roads over 70 km/h are skipped unless tagged `lit=yes`; Hill Road is now listed in `litArterials` in `dist/street-furniture.js`. It uses slim steel lamp columns about every 40 m on the left (outer) kerb of each one-way carriageway, with no overhead wires. Where the Wainuiomata Shared Path runs along the kerb, a column steps out up to about 6 m so it stands clear of the path. An explicit `lit=no` still wins. Column positions are procedural, not a survey of the actual lighting assets. `node tests/street-furniture.mjs` covers the arterial override, kerb side, the clearance beside the shared path and the `lit=no` exception.
+
+## Porirua, the Kāpiti Coast and the Wairarapa
+
+The regional map now reaches north to Waikanae and east to Greytown and Martinborough. The terrain grid is 70 × 63 km (x −24 000…46 000, z −44 000…19 000; 2801 × 2521 samples at 25 m), and the playable bounds stay 500 m inside it. The gaps inside the old grid are filled too: Porirua, Titahi Bay, Whitby, Plimmerton and Pāuatahanui had no streets or buildings, and Churton Park, Tawa, Ōhāriu, Mākara and Featherston were sparse.
+
+- **Terrain and coast.** New ground comes from the LINZ national 8 m contour DEM (sheets BP31–BQ34). Every earlier sample is kept, and only former no-data placeholders are refilled. Large DEM no-data areas become sea. The coast mask is now `coast-mask-region.png` at 10 m/pixel (was 7.8125). That keeps the decoded browser canvas near its earlier size, and the established shoreline is resampled into place. OSM woodland fills the forest raster in the new strips, and `prepare_outer_imagery.py` rebuilds the 20 m aerial layer for the whole grid.
+- **Streets, water and parks.** These come from OpenStreetMap map-API tiles over the new areas. Tiles wholly inside an earlier import are skipped. This added about 16 800 road and path ways, 4 500 waterways and 1 370 parks and sports grounds, which `parks.js` furnishes.
+- **Buildings.** About 69 500 LINZ building outlines were added. Heights come from overlapping OSM `height`/`building:levels` tags where present (about 3 700). The rest are inferred from footprint area and are not surveyed. Roofs and far-view rows are repackaged by `package_regional_roofs.py`.
+- **Railway.** Wellington station, the Johnsonville line, the Kāpiti line (through the Tawa tunnels and along the coast to Waikanae) and the Wairarapa line beyond Featherston are added from OSM. Four Hutt and Kāpiti ways had been cut at an old x = −10 000 boundary, short of Wellington, and are rebuilt whole. Trains now run from Wellington on four routes:
+  - Hutt Valley commuter to Upper Hutt (32 km)
+  - Kāpiti commuter to Waikanae (55 km)
+  - Johnsonville commuter (10 km)
+  - Wairarapa Connection to Featherston (57 km)
+
+  New track is graded to at most 3%; the 25 m DEM alone gave pitches of up to 15% through cuttings. The terrain blends to the trackbed as cut or fill. The surveyed Petone–Upper Hutt line keeps its profile. Tunnel grades are interpolated between portals, and the service pattern is fictional.
+- **Travel.** The Travel menu adds Johnsonville, Tawa, Mākara, Porirua, Titahi Bay, Plimmerton, Paekākāriki, Paraparaumu Beach, Waikanae, Greytown and Martinborough.
+
+Rebuild with `/private/tmp/wainui-gis/bin/python`, in this order:
+
+1. `scripts/expand_north_east.py` (terrain, sea, coast mask, water and woodland; it refuses to run twice, so restore `/private/tmp/wainui-before-north-east.tar.gz` first)
+2. `scripts/prepare_outer_imagery.py`
+3. `scripts/expand_north_east_map.py` (streets, waterways, buildings and parks; reruns deduplicate)
+4. `scripts/package_regional_roofs.py`
+5. `scripts/expand_north_east_rail.py`
+
+`python tests/north-east.py` checks dry land and sea at each town, preserved earlier samples, streets and buildings per district, one far row per building, the station list, connected routes from Wellington to each terminus, and the 3% grade on new track. `tests/regional-rivers.mjs`, `tests/remutaka.py` and `tests/wellington.py` now pin their checks to the extents they were written for.

@@ -4,7 +4,7 @@
 // so far); building the world from them fills the rest against how long that took last time. It stops short of full until
 // #play is enabled. A download that goes quiet is called out; the build phase only counts its seconds.
 const SAVED='wainui-load',STALL=15000,DOWNLOAD_SHARE=.4;
-const NAMES=[[/regional-terrain|terrain-fine|terrain\.bin|geodata/,'Terrain'],[/regional-far|regional-roof-far/,'Distant buildings'],[/buildings|building-|roof-detail/,'Buildings'],[/regional-map|map\.json|railways|traffic-controls/,'Roads and railways'],[/waterways|coast/,'Rivers and coast'],[/forest|open-spaces|foliage/,'Bush and parks'],[/ground-|roof-aerial|roof-imagery|\.jpg$/,'Aerial imagery'],[/facade|surfaces|\.png$/,'Textures'],[/audio|\.mp3$|\.ogg$|\.m4a$/,'Sound'],[/\.json$/,'Map data']];
+const NAMES=[[/regional-terrain|terrain-fine|terrain\.bin|geodata/,'Terrain'],[/regional-far|regional-roof-far/,'Distant buildings'],[/buildings|building-|roof-detail/,'Buildings'],[/regional-map|map\.json|railways|traffic-controls/,'Roads and railways'],[/waterways|coast/,'Rivers and coast'],[/forest|open-spaces|dog-parks|foliage/,'Bush and parks'],[/ground-|roof-aerial|roof-imagery|\.jpg$/,'Aerial imagery'],[/facade|surfaces|\.png$/,'Textures'],[/audio|\.mp3$|\.ogg$|\.m4a$/,'Sound'],[/\.json$/,'Map data']];
 const label=url=>{const file=decodeURIComponent(new URL(url,location.href).pathname.split('/').pop());return (NAMES.find(([re])=>re.test(file))?.[1]||'Data')+' · '+file};
 const mb=b=>(b/1048576).toFixed(b<1048576*10?1:0)+' MB';
 let saved={bytes:0,build:0};try{saved={...saved,...JSON.parse(localStorage.getItem(SAVED)||'{}')}}catch{}

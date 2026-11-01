@@ -40,5 +40,5 @@ assert (D/'regional-far.bin').stat().st_size==count*8*4
 backup=pathlib.Path('/private/tmp/wainui-before-wellington.tar.gz')
 if backup.exists():
  with tarfile.open(backup) as t:
-  old=json.load(t.extractfile('regional-terrain.json'));a=np.frombuffer(t.extractfile('regional-terrain.bin').read(),dtype='<i4').reshape(old['height'],old['width']);offset=(old['minX']-m['minX'])//25;b=terrain[:old['height'],offset:offset+old['width']];keep=a!=-300;assert np.array_equal(a[keep],b[keep]),'Previous terrain samples must remain unchanged (no-data placeholders may be refilled)'
+  old=json.load(t.extractfile('regional-terrain.json'));a=np.frombuffer(t.extractfile('regional-terrain.bin').read(),dtype='<i4').reshape(old['height'],old['width']);offset=(old['minX']-m['minX'])//25;row=(old['minZ']-m['minZ'])//25;b=terrain[row:row+old['height'],offset:offset+old['width']];keep=a!=-300;assert np.array_equal(a[keep],b[keep]),'Previous terrain samples must remain unchanged (no-data placeholders may be refilled)'
 print('PASS: Wellington districts on dry terrain, harbour water, named streets, building manifests, height tags, far geometry and preserved terrain.')

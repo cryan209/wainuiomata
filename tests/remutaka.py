@@ -17,7 +17,7 @@ def height(x,z):return terrain[round((z-m['minZ'])/25),round((x-m['minX'])/25)]
 for name,lon,lat,low,high in [('Remutaka Hill Road summit',175.2305,-41.1075,450,700),('Featherston',175.325,-41.116,20,90),('Kaitoke',175.17,-41.08,150,320)]:
  x,z=point(lon,lat);assert m['bounds']['minX']<x<m['bounds']['maxX'] and m['bounds']['minZ']<z<m['bounds']['maxZ'],name;assert land(x,z),name;assert low<height(x,z)<high,(name,height(x,z))
 # Range crest: the highest new ground is a real mountain range, not a placeholder plateau.
-east=terrain[:,round((20500-m['minX'])/25):];assert 700<east.max()<1000,east.max()
+east=terrain[round((-23500-m['minZ'])/25):,round((20500-m['minX'])/25):round((34000-m['minX'])/25)];assert 700<east.max()<1000,east.max()  # the Remutaka strip; the Tararua Range north of it rises past 1500m
 for name,lon,lat in [('Palliser Bay',175.141,-41.425),('Ōhāriu coast',174.728,-41.175)]:assert not land(*point(lon,lat)),name+' must be sea'
 # No flat land at the -3m no-data placeholder: large gaps are sea, and only tiny inland holes may remain.
 landMask=np.array(mask.resize((m['width'],m['height'])))>128;assert ((terrain<=-2.99)&landMask).sum()<500,int(((terrain<=-2.99)&landMask).sum())
@@ -28,5 +28,5 @@ fx=lambda x:int((x-m['minX'])/(m['maxX']-m['minX'])*forest.shape[1]);assert (for
 backup=pathlib.Path('/private/tmp/wainui-before-remutaka.tar.gz')
 if backup.exists():
  with tarfile.open(backup) as t:
-  old=json.load(t.extractfile('regional-terrain.json'));a=np.frombuffer(t.extractfile('regional-terrain.bin').read(),dtype='<i4').reshape(old['height'],old['width']);b=np.round(terrain[:,:old['width']]*100).astype('<i4');keep=a!=-300;assert np.array_equal(a[keep],b[keep]),'Surveyed samples must remain unchanged'
+  old=json.load(t.extractfile('regional-terrain.json'));a=np.frombuffer(t.extractfile('regional-terrain.bin').read(),dtype='<i4').reshape(old['height'],old['width']);row=round((old['minZ']-m['minZ'])/25);b=np.round(terrain[row:row+old['height'],:old['width']]*100).astype('<i4');keep=a!=-300;assert np.array_equal(a[keep],b[keep]),'Surveyed samples must remain unchanged'
 print('PASS: Remutaka Range to Featherston on dry terrain, crest heights, open sea at Palliser Bay and Ōhāriu, sea beyond the grid, eastern woodland and preserved survey samples.')

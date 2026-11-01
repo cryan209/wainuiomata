@@ -29,3 +29,12 @@ const undergroundScene=new T.Scene(),undergroundWorld={network:simple(plain),fre
 console.log('PASS: underground/overhead styles, unnamed public streets, concealed bridge lighting, unlit/private exclusions, consistent street-level defaults and wire-free standalone meshes.');
 
 const bridgeNetwork=simple({...plain,bridge:true,tags:{}});bridgeNetwork.onBridge=()=>true;const bridgeWorld={...undergroundWorld,network:bridgeNetwork,walkHeight:()=>8,hydro:{channel:()=>({y:0})}},bridgeScene=new T.Scene(),bridgeLights=createStreetFurniture(bridgeScene,bridgeWorld);assert.ok(bridgeLights.plan.poles.length>0,'Supported bridge decks can receive lamps above water');assert.equal(bridgeLights.plan.links.length,0);bridgeLights.dispose();
+
+// Wainuiomata Hill Road is lit despite its 80 km/h carriageways: kerbside steel columns, left side of travel, no overhead wires.
+const hill=planStreetFurniture(simple({...plain,id:'hill-up',name:'Wainuiomata Hill Road',type:'secondary',width:7,tags:{maxspeed:'80',oneway:'yes'},p:[new T.Vector2(0,0),new T.Vector2(0,400)]}));
+assert.ok(hill.poles.length>=8,'Hill Road carriageways are lit');assert.ok(hill.poles.every(p=>p.kind==='lamp'&&p.x>0),'Hill Road columns stand on the left kerb');assert.equal(hill.links.length,0,'Hill Road lamps have no overhead spans');
+assert.equal(planStreetFurniture(simple({...plain,name:'Wainuiomata Hill Road',type:'secondary',tags:{maxspeed:'80',lit:'no'}})).poles.length,0,'An explicit lit=no still wins');
+const carriage={...plain,id:'hill-down',name:'Wainuiomata Hill Road',type:'secondary',width:7,tags:{maxspeed:'80',oneway:'yes'},p:[new T.Vector2(0,0),new T.Vector2(0,400)]},sharedPath={id:'shared',name:'Wainuiomata Shared Path',type:'cycleway',width:2.5,tags:{},p:[new T.Vector2(5,0),new T.Vector2(5,400)]};
+const besidePath=planStreetFurniture({roads:[carriage,sharedPath],junctions:[],at:(x,z)=>Math.abs(x-5)<Math.abs(x)?{r:sharedPath,d:Math.abs(x-5)}:{r:carriage,d:Math.abs(x)},height:()=>0,junctionAt:()=>false});
+assert.ok(besidePath.poles.length>=8,'Columns still line a carriageway with a shared path at the kerb');assert.ok(besidePath.poles.every(p=>Math.abs(p.x-5)>1.5&&p.x<10),'Columns stand clear of the shared path and near their kerb');
+console.log('PASS: Wainuiomata Hill Road kerbside lighting, clear of the shared path.');
