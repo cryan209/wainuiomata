@@ -575,7 +575,14 @@ The startup download is about 48 MB (it was about 72 MB, both as gzipped by GitH
   - The `.bin` files stay the build scripts' source. Rerun `pack_runtime.py` after any terrain or building rebuild; `node tests/runtime-packs.mjs` fails while a pack is stale.
 - **Compact road map.** `lib/regional_map.save_map` rounds coordinates to 1 cm and drops OSM bookkeeping tags the game never reads (`source`, `attribution`, `LINZ:*`, `note`, …). This saves about 1.2 MB across the road map and waterways.
 
-Building the world after download still takes about 28 s on a fast machine. The biggest costs are the region-wide road network (about 9 s: profiles, grades and terrain shoulders for all 64 000 ways) and street furniture planned across the whole region (about 5 s). Streaming those by area would be the next step.
+### Work done when needed
+
+Building the world after download took about 28 s on a fast machine; it now takes about 22 s, because region-wide work that only matters near the player waits until something asks for it:
+
+- **Trails** (footways, paths, cycleways, steps, tracks: 6 200 km, more than the streets) build their height profiles and grade solve the first time anything asks for a height on them. Street grades are still solved together at startup, since one street's grade depends on the streets it meets. The lazy heights are identical to the old eager ones.
+- **Verge cabinets and covers** are planned per 240 m furniture chunk the first time the chunk streams in, a collision or parking check reaches it, or the travel list needs the cabinet view. Spacing between cabinets is kept within a chunk, so the layout does not depend on where the player starts. Intersection signals and signs, still placed region-wide at startup, keep clear of poles; cabinets keep clear of them.
+
+What remains at startup: the street grade solve (about 6 s), terrain, trees, buildings, and the street poles, lamps and night-light map (about 3 s), which the distant night view needs across the whole region. Precomputing the street grades into a download would be the next step.
 
 ## Rock and 8-bit music
 

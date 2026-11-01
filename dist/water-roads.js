@@ -1,7 +1,7 @@
 import * as T from './vendor/three.js';
 import {railTerrainGround,planRailSubways,subwayFloorAt} from './rail-clearance.js?v=rail-stations-103';
 import {namedRoadTunnels} from './tunnel-scenery.js?v=regional-tunnels-101';
-import {buildJunctions,solveRoadGrades,approachLimit} from './road-grades.js?v=rail-stations-103';
+import {buildJunctions,solveRoadGrades,approachLimit} from './road-grades.js?v=lazy-trails-114';
 import {convexFootprint,subtractFootprint,triangulateFragments,insideFootprint} from './road-clipping.js?v=smooth-junctions-25';
 import {roadWidth,roadLanes,laneWidth,isOneway,inheritLanes,roadIndex,associatePaths,projectSegment,planOverbridges,underpassHeight,planUnderpasses,clearanceHeight,offsetRoadPoint,associateBridgeDecks} from './road-topology.js?v=regional-tunnels-101';
 import {applyRoadDetail} from './road-textures.js?v=local-road-aerial-48';
@@ -33,7 +33,10 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
  // Sample the road centre rather than draping each edge over the hillside.
  // Smooth the longitudinal profile, pinning shared nodes and bridge abutments.
  const trailTypes=new Set(['footway','path','cycleway','steps','pedestrian','bridleway','track']),median3=(a,b,c)=>Math.max(Math.min(a,b),Math.min(Math.max(a,b),c)),median5=(a,b,c,d,e)=>{const f=Math.max(Math.min(a,b),Math.min(c,d)),g=Math.min(Math.max(a,b),Math.max(c,d));return median3(e,f,g)};
- for(const r of roads){r.profiles=[];for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1],len=a.distanceTo(b),n=Math.max(1,Math.ceil(len/2)),values=[],nx=-(b.y-a.y)/(len||1),nz=(b.x-a.x)/(len||1);
+ // Trails without bridges, tunnels or clearances are only profiled (and graded, see solveRoadGrades) when a height on them is first
+ // needed; most of the region's 6000km of paths and tracks are never visited in a session. The result is the same as an eager build.
+ const lazyProfile=r=>trailTypes.has(r.type)&&!r.bridge&&!r.tunnel&&!r.clearances;
+ function buildProfiles(r){r.profiles=[];for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1],len=a.distanceTo(b),n=Math.max(1,Math.ceil(len/2)),values=[],nx=-(b.y-a.y)/(len||1),nz=(b.x-a.x)/(len||1);
   // A cliff, retaining wall or river bank under one edge (or a slightly offset OSM centre line) must not drag the whole roadbed:
   // take the median of the centre and both edges, then a 5-sample median along it, before the triangular smoothing.
   // Only bridge abutments (and trail ends, which the street solve does not join) pin segment ends, so a street node on a cliff top no longer drags 25m of road with it.
@@ -49,7 +52,8 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
   r.profiles.push(values)}
   // Roads over an underpass start lifted to their clearance, the lift fading at the approach grade relative to the surveyed profile.
   if(r.clearances){const slope=approachLimit(r),lifts=r.clearances.map(c=>{const q=projection(r,c.x,c.z);return{c,lift:Math.max(0,c.need-height(r,q.i,q.t,c.x,c.z))}});for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1],values=r.profiles[i],n=values.length-1;for(let j=0;j<=n;j++){const x=T.MathUtils.lerp(a.x,b.x,j/n),z=T.MathUtils.lerp(a.y,b.y,j/n);let add=0;for(const{c,lift}of lifts){if(Math.abs((x-c.x)*c.dz-(z-c.z)*c.dx)>r.width+2)continue;add=Math.max(add,lift-Math.max(0,Math.abs((x-c.x)*c.dx+(z-c.z)*c.dz)-c.half)*slope)}values[j]+=add}}}}
- const junctions=buildJunctions(roads),gradeStats=solveRoadGrades(roads,junctions,height,(r,x,z)=>clearanceHeight(r,x,z,Infinity));
+ for(const r of roads){if(lazyProfile(r))r.lazyProfile=true;else buildProfiles(r)}
+ const junctions=buildJunctions(roads),gradeStats=solveRoadGrades(roads,junctions,height,(r,x,z)=>clearanceHeight(r,x,z,Infinity),(r,i,t,x,z)=>height(r,i,t,x,z,true));
  const junctionCells=new Map();for(const hub of junctions){hub.bridge=hub.legs.some(l=>l.r.bridge);hub.portal=hub.legs.some(l=>l.r.tunnel);for(let ix=Math.floor((hub.x-hub.radius-12)/50);ix<=Math.floor((hub.x+hub.radius+12)/50);ix++)for(let iz=Math.floor((hub.z-hub.radius-12)/50);iz<=Math.floor((hub.z+hub.radius+12)/50);iz++){const key=ix+','+iz;if(!junctionCells.has(key))junctionCells.set(key,[]);junctionCells.get(key).push(hub)}}
  // Terrain is graded to every nearby roadbed and junction patch. Shoulders widen with the height difference (about 1:2, 4–16m),
  // and the nearest surface dominates overlapping shoulders smoothly (e^-d/0.6m) instead of switching outright, so cuttings and embankments have no walls.
@@ -78,7 +82,8 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
 `)};material.customProgramCacheKey=()=>key()+'|underpass-clip-v1';material.needsUpdate=true}
  function junctionHits(x,z){return(junctionCells.get(Math.floor(x/50)+','+Math.floor(z/50))||[]).filter(h=>insideFootprint(x,z,h.outline))}
 
- function height(r,i,t,x,z){const host=r.sharedSegments.get(i);if(host){const p=projection(host,x,z);return height(host,p.i,p.t,x,z)}const graded=r.gradeProfiles?.[i];if(graded){const u=clamp(t,0,1)*(graded.length-1),j=Math.min(graded.length-2,Math.floor(u));return T.MathUtils.lerp(graded[j],graded[j+1],u-j)}if(r.bridge){if(r.deckHeights)return T.MathUtils.lerp(r.deckHeights[i],r.deckHeights[i+1],t);let h=T.MathUtils.lerp(r.deckStart,r.deckEnd,(r.cumulative[i]+r.p[i].distanceTo(r.p[i+1])*t)/r.length);for(const other of r.parallelDecks){const p=projection(other,x,z);if(p.d<(r.pavementWidth+other.pavementWidth)/2+2)h=Math.max(h,T.MathUtils.lerp(other.deckStart,other.deckEnd,(other.cumulative[p.i]+other.p[p.i].distanceTo(other.p[p.i+1])*p.t)/other.length))}return h;}const values=r.profiles[i],u=clamp(t,0,1)*(values.length-1),j=Math.min(values.length-2,Math.floor(u));return T.MathUtils.lerp(values[j],values[j+1],u-j)}
+ // ungraded: a trail's surveyed profile before grading (what trail grading itself samples); streets are always graded.
+ function height(r,i,t,x,z,ungraded=false){const host=r.sharedSegments.get(i);if(host){const p=projection(host,x,z);return height(host,p.i,p.t,x,z,ungraded)}if(!ungraded&&r.lazyGrade)r.lazyGrade();const graded=ungraded&&trailTypes.has(r.type)?null:r.gradeProfiles?.[i];if(graded){const u=clamp(t,0,1)*(graded.length-1),j=Math.min(graded.length-2,Math.floor(u));return T.MathUtils.lerp(graded[j],graded[j+1],u-j)}if(r.bridge){if(r.deckHeights)return T.MathUtils.lerp(r.deckHeights[i],r.deckHeights[i+1],t);let h=T.MathUtils.lerp(r.deckStart,r.deckEnd,(r.cumulative[i]+r.p[i].distanceTo(r.p[i+1])*t)/r.length);for(const other of r.parallelDecks){const p=projection(other,x,z);if(p.d<(r.pavementWidth+other.pavementWidth)/2+2)h=Math.max(h,T.MathUtils.lerp(other.deckStart,other.deckEnd,(other.cumulative[p.i]+other.p[p.i].distanceTo(other.p[p.i+1])*p.t)/other.length))}return h;}if(!r.profiles)buildProfiles(r);const values=r.profiles[i],u=clamp(t,0,1)*(values.length-1),j=Math.min(values.length-2,Math.floor(u));return T.MathUtils.lerp(values[j],values[j+1],u-j)}
  function hits(x,z){return(spatial.get(Math.floor(x/50)+','+Math.floor(z/50))||[]).map(({r,i})=>projectSegment(r,i,x,z))}
  function at(x,z,onlyBridge=false,groundOnly=false){let best=null;for(const hit of hits(x,z)){const{r,i}=hit;if(r.sharedSegments.has(i))continue;if((onlyBridge&&!r.bridge)||(groundOnly&&(r.bridge||r.sharedSegments.has(i))))continue;const motor=!['footway','path','cycleway','steps','pedestrian','bridleway'].includes(r.type),rank=hit.d-(motor&&hit.d<r.width/2+.1?100:0);if(!best||rank<best.rank)best={...hit,rank}}return best}
  function surface(x,z,y){let best=null,score=Infinity;for(const hub of junctionHits(x,z)){const s=y===undefined?0:Math.abs(hub.height-(y-2));if(s<score){best={r:hub.legs[0].r,y:hub.height,d:0,junction:hub};score=s}}for(const hit of hits(x,z)){const{r,i,t,d}=hit;if(r.sharedSegments.has(i)||(r.tunnel&&y===undefined))continue;if(d>(r.pavementWidth||r.width+2)/2+.1)continue;const h=height(r,i,t,x,z),s=y===undefined?d:Math.abs(h-(y-2))+.02*d;if(s<score-1e-5||(Math.abs(s-score)<1e-5&&h>best?.y)){best={...hit,y:h};score=s}}const base=hydro.ground(x,z);if(y!==undefined&&(best?.junction?.bridge||best?.r.bridge)&&Math.abs(base-(y-2))+.1<score)return null;return best}
@@ -126,7 +131,7 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
  // Remaining chunks build nearest-first within draw distance: one finished chunk per frame, 3ms per frame (8ms for chunks under the camera, e.g. after a teleport).
  pumpGeometry=camera=>{if(!pendingChunks.size&&!geometryJob)return;const start=performance.now();while(performance.now()<start+(urgent?8:3)){if(!geometryJob){if(performance.now()<nextSearch)return;let best=null,bestD=4800;for(const id of pendingChunks){const c=centre(id),d=Math.hypot(c.x-camera.x,c.z-camera.z);if(d<bestD){best=id;bestD=d}}if(!best){nextSearch=performance.now()+500;return}urgent=bestD<700;pendingChunks.delete(best);geometryJob=buildChunks(new Set([best]))}if(geometryJob.next().done){geometryJob=null;if(!pendingChunks.size)release();return}}}
  }
- overrides.clear();
+ // overrides (bridge and portal end heights, a few hundred entries) stay: lazily profiled trails still read them.
  const tunnelScenery=buildGeometry?namedRoadTunnels(scene,{roads,height,ground}):null;
  // Markings, footpaths and small structures are only a pixel or two wide past 1.6km.
  const minorSurfaces=new Set(['line','pavement','rail','structure']);

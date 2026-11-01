@@ -54,13 +54,17 @@ function solveStreetGrades(roads,hubs,sample,minimum){
 
 // Trails follow terrain and attach to streets. They cannot impose their hill grades on streets.
 // Sidewalks and cycleways running beside a street (within 3m of its pavement, under 4m apart vertically) are pulled onto its level instead of leaving a ledge.
-export function solveRoadGrades(roads,hubs,sample,minimum){
+export function solveRoadGrades(roads,hubs,sample,minimum,ungraded=sample){
  const streets=roads.filter(r=>!path.has(r.type)),trails=roads.filter(r=>path.has(r.type)),{street,streetNear,...stats}=solveStreetGrades(streets,hubs,sample,minimum),anchors=new Map();
- for(const r of streets)for(let i=0;i<r.p.length;i++){const p=r.p[i],segment=Math.min(i,r.p.length-2),t=i===r.p.length-1?1:0,h=sample(r,segment,t,p.x,p.y),id=key(p);anchors.set(id,Math.max(anchors.get(id)??-Infinity,h))}
+ for(const r of streets)for(let i=0;i<r.p.length;i++){const p=r.p[i],segment=Math.min(i,r.p.length-2),t=i===r.p.length-1?1:0,h=ungraded(r,segment,t,p.x,p.y),id=key(p);anchors.set(id,Math.max(anchors.get(id)??-Infinity,h))}
  const streetNodes=new Set(anchors.keys());
- for(const r of trails)for(let i=0;i<r.p.length;i++){const p=r.p[i],id=key(p);if(streetNodes.has(id))continue;const h=sample(r,Math.min(i,r.p.length-2),i===r.p.length-1?1:0,p.x,p.y);anchors.set(id,Math.max(anchors.get(id)??-Infinity,h))}
+ // Trails are graded one at a time, when a height on one is first needed. A shared trail node takes the highest
+ // ungraded height of the trails meeting there, exactly as when every trail was graded up front.
+ const trailNodes=new Map();for(const r of trails)for(let i=0;i<r.p.length;i++){const id=key(r.p[i]);if(streetNodes.has(id))continue;if(!trailNodes.has(id))trailNodes.set(id,[]);trailNodes.get(id).push([r,i])}
+ const anchor=id=>{if(anchors.has(id)||!trailNodes.has(id))return anchors.get(id);let h=-Infinity;for(const[r,i]of trailNodes.get(id)){const p=r.p[i];h=Math.max(h,ungraded(r,Math.min(i,r.p.length-2),i===r.p.length-1?1:0,p.x,p.y))}anchors.set(id,h);return h};
  let trailSamples=0;
- for(const r of trails){r.gradeProfiles=[];for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;const a=r.p[i],b=r.p[i+1],length=a.distanceTo(b),n=Math.max(1,Math.ceil(length/2)),start=sample(r,i,0,a.x,a.y),end=sample(r,i,1,b.x,b.y),d0=(anchors.get(key(a))??start)-start,d1=(anchors.get(key(b))??end)-end,span=Math.min(15,length),values=new Float64Array(n+1);let side=null;const beside=!r.tunnel&&sidewalk.has(r.type)&&streetNear(a,b);
-  for(let j=0;j<=n;j++){const t=j/n,x=T.MathUtils.lerp(a.x,b.x,t),z=T.MathUtils.lerp(a.y,b.y,t);let h=sample(r,i,t,x,z)+d0*(1-T.MathUtils.smoothstep(t*length,0,span))+d1*(1-T.MathUtils.smoothstep((1-t)*length,0,span));if(beside&&(j%2===0||j===n))side=street(x,z,r);if(side){const pull=(1-T.MathUtils.smoothstep(side.gap,0,3))*(1-T.MathUtils.smoothstep(Math.abs(side.h-h),2.5,4));h+=(side.h-h)*pull}values[j]=h}r.gradeProfiles[i]=values;trailSamples+=values.length}r.profiles=null}
- return{...stats,nodes:stats.nodes+trailSamples,trailSamples};
+ function grade(r){r.gradeProfiles=[];for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;const a=r.p[i],b=r.p[i+1],length=a.distanceTo(b),n=Math.max(1,Math.ceil(length/2)),start=ungraded(r,i,0,a.x,a.y),end=ungraded(r,i,1,b.x,b.y),d0=(anchor(key(a))??start)-start,d1=(anchor(key(b))??end)-end,span=Math.min(15,length),values=new Float64Array(n+1);let side=null;const beside=!r.tunnel&&sidewalk.has(r.type)&&streetNear(a,b);
+  for(let j=0;j<=n;j++){const t=j/n,x=T.MathUtils.lerp(a.x,b.x,t),z=T.MathUtils.lerp(a.y,b.y,t);let h=ungraded(r,i,t,x,z)+d0*(1-T.MathUtils.smoothstep(t*length,0,span))+d1*(1-T.MathUtils.smoothstep((1-t)*length,0,span));if(beside&&(j%2===0||j===n))side=street(x,z,r);if(side){const pull=(1-T.MathUtils.smoothstep(side.gap,0,3))*(1-T.MathUtils.smoothstep(Math.abs(side.h-h),2.5,4));h+=(side.h-h)*pull}values[j]=h}r.gradeProfiles[i]=values;trailSamples+=values.length}if(r.lazyProfile)r.profiles=null}
+ for(const r of trails)r.lazyGrade=()=>{r.lazyGrade=null;grade(r)};
+ return{...stats,get trailSamples(){return trailSamples}};
 }

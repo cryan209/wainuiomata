@@ -1,9 +1,10 @@
 // Illustrative verge equipment, anchored to the existing street network.
 const hash=s=>{let n=2166136261;for(const c of String(s))n=Math.imul(n^c.charCodeAt(0),16777619);return n>>>0};
 const dimensions={telecom:[.82,1.22,.43],pillar:[.35,.74,.30],transformer:[1.40,1.28,.88],access:[.72,.035,.54],water:[.28,.035,.33]};
-export function planUtilityScenery(poles,world){
- const result=[],cells=new Map(),network=world.network,poleCells=new Map();
- for(const p of poles){const key=Math.floor(p.x/20)+','+Math.floor(p.z/20);if(!poleCells.has(key))poleCells.set(key,[]);poleCells.get(key).push(p)}
+// poleCells (all poles in 20 m cells) lets a caller plan one area's poles while keeping clear of its neighbours' poles.
+export function planUtilityScenery(poles,world,poleCells=null){
+ const result=[],cells=new Map(),network=world.network;
+ if(!poleCells){poleCells=new Map();for(const p of poles){const key=Math.floor(p.x/20)+','+Math.floor(p.z/20);if(!poleCells.has(key))poleCells.set(key,[]);poleCells.get(key).push(p)}}
  for(const p of poles){
   if(p.r.bridge||p.r.tags?.tunnel==='yes')continue;
   const seed=hash(p.name+':utility:'+Math.round(p.x)+':'+Math.round(p.z)),choice=seed%12;
@@ -14,9 +15,13 @@ export function planUtilityScenery(poles,world){
    const outward=solid ? .90 : .85,x=p.x+p.dx*along+p.nx*outward,z=p.z+p.dz*along+p.nz*outward;
    if(occupied(x,z)||polesNear(x,z,poleCells,radius+1.0))continue;
    const y=world.walkHeight(x,z,network.height(p.r,p.i,p.t,x,z)+2),samples=[];let okay=Number.isFinite(y);
-   for(const a of [-1,0,1])for(const b of [-1,0,1]){
-    const sx=x+Math.cos(yaw)*a*(width/2+.18)+Math.sin(yaw)*b*(depth/2+.18),sz=z-Math.sin(yaw)*a*(width/2+.18)+Math.cos(yaw)*b*(depth/2+.18),floor=world.walkHeight(sx,sz,y+2),hit=network.at(sx,sz),rail=world.railways?.at(sx,sz,0);
-    if(!Number.isFinite(floor)||!world.free(sx,sz,floor+.5)||world.hydro?.channel(sx,sz)||network.onBridge?.(sx,sz,floor+2)||network.junctionAt?.(sx,sz)||!hit||hit&&(hit.d<hit.r.width/2+.55||hit.d>hit.r.width/2+3.5)||rail&&rail.d<4)okay=false;
+   // Cheap road tests run before the height lookup, and a site is dropped at its first failing sample.
+   if(okay)corners:for(const a of [-1,0,1])for(const b of [-1,0,1]){
+    const sx=x+Math.cos(yaw)*a*(width/2+.18)+Math.sin(yaw)*b*(depth/2+.18),sz=z-Math.sin(yaw)*a*(width/2+.18)+Math.cos(yaw)*b*(depth/2+.18),hit=network.at(sx,sz);
+    if(!hit||hit.d<hit.r.width/2+.55||hit.d>hit.r.width/2+3.5||network.junctionAt?.(sx,sz)){okay=false;break corners}
+    const rail=world.railways?.at(sx,sz,0);if(rail&&rail.d<4||world.hydro?.channel(sx,sz)){okay=false;break corners}
+    const floor=world.walkHeight(sx,sz,y+2);
+    if(!Number.isFinite(floor)||network.onBridge?.(sx,sz,floor+2)||!world.free(sx,sz,floor+.5)){okay=false;break corners}
     samples.push(floor);
    }
    // A shallow plinth absorbs small verge unevenness; steep sites remain empty.
