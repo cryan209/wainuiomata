@@ -21,7 +21,7 @@ import {addSideWindows} from './side-windows.js?v=large-houses-94';
 import {createRoofDetail} from './roof-detail.js?v=smooth-junctions-25';
 import {createCoast} from './coast.js?v=boats-81';
 import {createRegionStream} from './region-stream.js?v=waterloo-reference-104';
-import {createRailways} from './railways.js?v=waterloo-reference-104';
+import {createRailways} from './railways.js?v=train-ride-1';
 import {assembleRegionalMap} from './regional-map.js?v=regions-1';
 import {unpackTerrain,unpackFar} from './terrain-pack.js?v=runtime-packs-1';
 const fetchAsset=url=>fetch(url,{cache:'no-cache'});

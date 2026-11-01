@@ -7,7 +7,7 @@ export function createAmbientAudio(ctx,output,world){
  return {update({active,position,yaw=0,weather={},day=1,indoors=false,vehicle}){
   const dt=Math.max(0,Math.min(.1,ctx.currentTime-lastTime));lastTime=ctx.currentTime;if(active)clock+=dt;
   if(clock>=nextScan){nextScan=clock+.2;near=(world.traffic?.cars||[]).filter(c=>!c.controlled&&!c.parked&&c.position&&Math.abs(c.position.y-position.y)<10).map(c=>({car:c,d:Math.hypot(c.position.x-position.x,c.position.z-position.z)})).filter(c=>c.d<100).sort((a,b)=>a.d-b.d).slice(0,3)}
-  const cabin=vehicle?.kind==='car'?.45:1,audible=active&&!indoors?cabin:0,trees=world.forestDensity?.(position.x,position.z)||0;
+  const cabin=vehicle?.passenger?.30:vehicle?.kind==='car'?.45:1,audible=active&&!indoors?cabin:0,trees=world.forestDensity?.(position.x,position.z)||0;
   if(active&&!indoors&&clock>nextBird){nextBird=clock+4+Math.random()*8;if(day>.2&&(weather.rain||0)<.5){birdUntil=clock+.65}}
   if(active&&!indoors&&clock>nextDog){nextDog=clock+28+Math.random()*35;if(near.length&&trees<.4)dogUntil=clock+.6}
   if(active&&indoors!==inside){bellUntil=clock+.6;inside=indoors}
