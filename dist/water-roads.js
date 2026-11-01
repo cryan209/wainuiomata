@@ -1,14 +1,14 @@
 import * as T from './vendor/three.js';
 import {railTerrainGround,planRailSubways,subwayFloorAt} from './rail-clearance.js?v=rail-stations-103';
 import {namedRoadTunnels} from './tunnel-scenery.js?v=regional-tunnels-101';
-import {buildJunctions,solveRoadGrades,approachLimit} from './road-grades.js?v=lazy-trails-114';
+import {buildJunctions,solveRoadGrades,approachLimit} from './road-grades.js?v=street-grades-1';
 import {convexFootprint,subtractFootprint,triangulateFragments,insideFootprint} from './road-clipping.js?v=smooth-junctions-25';
 import {roadWidth,roadLanes,laneWidth,isOneway,inheritLanes,roadIndex,associatePaths,projectSegment,planOverbridges,underpassHeight,planUnderpasses,clearanceHeight,offsetRoadPoint,associateBridgeDecks} from './road-topology.js?v=regional-tunnels-101';
 import {applyRoadDetail} from './road-textures.js?v=local-road-aerial-48';
 import {roadStyle} from './appearance.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export {createHydrology} from './rivers.js?v=inland-water-99';
-export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHook,railways,{buildGeometry=true,roadMaterialHook=null,streamGeometry=null}={}){
+export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHook,railways,{buildGeometry=true,roadMaterialHook=null,streamGeometry=null,streetGrades=null}={}){
  const roads=[],overrides=new Map(),clipped=[];const bounds=map.bounds||{minX:-3350,maxX:3350,minZ:-3350,maxZ:3350};
  // Clip each segment to the loaded terrain rather than projecting distant map nodes onto its edge.
  function clip(a,b){let t0=0,t1=1,dx=b.x-a.x,dz=b.z-a.z;for(const [p,q]of [[-dx,a.x-bounds.minX],[dx,bounds.maxX-a.x],[-dz,a.z-bounds.minZ],[dz,bounds.maxZ-a.z]]){if(Math.abs(p)<1e-9){if(q<0)return null;continue}let r=q/p;if(p<0)t0=Math.max(t0,r);else t1=Math.min(t1,r);if(t0>t1)return null}return[{x:a.x+dx*t0,z:a.z+dz*t0,node:t0===0?a.node:null},{x:a.x+dx*t1,z:a.z+dz*t1,node:t1===1?b.node:null}]}
@@ -52,8 +52,10 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
   r.profiles.push(values)}
   // Roads over an underpass start lifted to their clearance, the lift fading at the approach grade relative to the surveyed profile.
   if(r.clearances){const slope=approachLimit(r),lifts=r.clearances.map(c=>{const q=projection(r,c.x,c.z);return{c,lift:Math.max(0,c.need-height(r,q.i,q.t,c.x,c.z))}});for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1],values=r.profiles[i],n=values.length-1;for(let j=0;j<=n;j++){const x=T.MathUtils.lerp(a.x,b.x,j/n),z=T.MathUtils.lerp(a.y,b.y,j/n);let add=0;for(const{c,lift}of lifts){if(Math.abs((x-c.x)*c.dz-(z-c.z)*c.dx)>r.width+2)continue;add=Math.max(add,lift-Math.max(0,Math.abs((x-c.x)*c.dx+(z-c.z)*c.dz)-c.half)*slope)}values[j]+=add}}}}
- for(const r of roads){if(lazyProfile(r))r.lazyProfile=true;else buildProfiles(r)}
- const junctions=buildJunctions(roads),gradeStats=solveRoadGrades(roads,junctions,height,(r,x,z)=>clearanceHeight(r,x,z,Infinity),(r,i,t,x,z)=>height(r,i,t,x,z,true));
+ // With precomputed street grades (streetGrades, see road-grades.js) streets are not profiled either: their graded heights
+ // replace the profiles, which are only rebuilt if the pack does not fit this map and the grades must be solved.
+ for(const r of roads){if(lazyProfile(r)||streetGrades&&!trailTypes.has(r.type))r.lazyProfile=true;else buildProfiles(r)}
+ const junctions=buildJunctions(roads),gradeStats=solveRoadGrades(roads,junctions,height,(r,x,z)=>clearanceHeight(r,x,z,Infinity),(r,i,t,x,z)=>height(r,i,t,x,z,true),streetGrades);
  const junctionCells=new Map();for(const hub of junctions){hub.bridge=hub.legs.some(l=>l.r.bridge);hub.portal=hub.legs.some(l=>l.r.tunnel);for(let ix=Math.floor((hub.x-hub.radius-12)/50);ix<=Math.floor((hub.x+hub.radius+12)/50);ix++)for(let iz=Math.floor((hub.z-hub.radius-12)/50);iz<=Math.floor((hub.z+hub.radius+12)/50);iz++){const key=ix+','+iz;if(!junctionCells.has(key))junctionCells.set(key,[]);junctionCells.get(key).push(hub)}}
  // Terrain is graded to every nearby roadbed and junction patch. Shoulders widen with the height difference (about 1:2, 4–16m),
  // and the nearest surface dominates overlapping shoulders smoothly (e^-d/0.6m) instead of switching outright, so cuttings and embankments have no walls.

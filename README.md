@@ -577,12 +577,13 @@ The startup download is about 48 MB (it was about 72 MB, both as gzipped by GitH
 
 ### Work done when needed
 
-Building the world after download took about 28 s on a fast machine; it now takes about 22 s, because region-wide work that only matters near the player waits until something asks for it:
+Building the world after download took about 28 s on a fast machine; it now takes about 17 s. Street grades are precomputed, and region-wide work that only matters near the player waits until something asks for it:
 
-- **Trails** (footways, paths, cycleways, steps, tracks: 6 200 km, more than the streets) build their height profiles and grade solve the first time anything asks for a height on them. Street grades are still solved together at startup, since one street's grade depends on the streets it meets. The lazy heights are identical to the old eager ones.
+- **Street grades** are precomputed into `dist/street-grades.pack` (1.8 MB gzipped): every street sample's graded height and every junction's height, to the centimetre. The game skips profiling 4 600 km of streets and solving the two-million-node grade graph, about 4 s. Run `node scripts/pack_street_grades.mjs` after changing the map, terrain, waterways or railways; it builds the same ground as the game from `scripts/lib/game-roads.mjs` and the shared `dist/world-ground.js`. `tests/street-grades.mjs` fails while the pack is stale, the game solves the grades itself when the pack does not fit its map, and `?solve-grades` forces that.
+- **Trails** (footways, paths, cycleways, steps, tracks: 6 200 km, more than the streets) build their height profiles and grade solve the first time anything asks for a height on them. The lazy heights are identical to the old eager ones.
 - **Verge cabinets and covers** are planned per 240 m furniture chunk the first time the chunk streams in, a collision or parking check reaches it, or the travel list needs the cabinet view. Spacing between cabinets is kept within a chunk, so the layout does not depend on where the player starts. Intersection signals and signs, still placed region-wide at startup, keep clear of poles; cabinets keep clear of them.
 
-What remains at startup: the street grade solve (about 6 s), terrain, trees, buildings, and the street poles, lamps and night-light map (about 3 s), which the distant night view needs across the whole region. Precomputing the street grades into a download would be the next step.
+What remains at startup: terrain, trees, buildings, the road meshes near the start, and the street poles, lamps and night-light map (about 3 s), which the distant night view needs across the whole region.
 
 ## Rock and 8-bit music
 

@@ -7,7 +7,7 @@ import {applyGroundImagery} from './ground-imagery.js?v=regional-ground-65';
 import {applyNightLight} from './night-lights.js?v=night-walls-73';
 import {createTerrainStream} from './terrain-stream.js?v=far-hills-69';
 import {makeTextures} from './textures.js?v=large-houses-94';
-import {createHydrology,createRoadNetwork} from './water-roads.js?v=lazy-trails-114';
+import {createHydrology,createRoadNetwork} from './water-roads.js?v=street-grades-1';
 import {facadeProfile,facadeStyle,FACADE_COUNT} from './appearance.js?v=large-houses-94';
 import {createTunnels} from './tunnels.js?v=perf-59';
 import {addGreenery} from './greenery.js?v=pine-lod-100';
@@ -24,11 +24,14 @@ import {createRegionStream} from './region-stream.js?v=waterloo-reference-104';
 import {createRailways} from './railways.js?v=train-ride-1';
 import {assembleRegionalMap} from './regional-map.js?v=regions-1';
 import {unpackTerrain,unpackFar} from './terrain-pack.js?v=runtime-packs-1';
+import {createSurveyGround} from './world-ground.js?v=street-grades-1';
 const fetchAsset=url=>fetch(url,{cache:'no-cache'});
 const loadRegionalMap=async()=>{const index=await fetchAsset('./regional-map.json').then(r=>r.json());return assembleRegionalMap(index,await Promise.all(index.parts.map(p=>fetchAsset('./'+p.file).then(r=>r.json()))))};
 const read=async(url,type)=>{const r=await fetchAsset(url);if(!r.ok)throw Error(`Could not load ${url}`);return new type(await r.arrayBuffer())};
 export async function loadWorld(scene){
  // The regional terrain and distant buildings download as compact packs (scripts/pack_runtime.py, dist/terrain-pack.js).
+ // Street grades are precomputed (scripts/pack_street_grades.mjs); ?solve-grades solves them here instead, and a missing pack falls back to that.
+ const streetGradesPack=new URLSearchParams(location.search).has('solve-grades')?Promise.resolve(null):read('./street-grades.pack',Uint8Array).catch(()=>null);
  const regionalTerrainMeta=fetchAsset('./regional-terrain.json').then(r=>r.json()),regionalBuildingMeta=fetchAsset('./regional-buildings.json').then(r=>r.json());
  const [meta,coarse,fine,buildings,roofData,wallData,localMap,roofImagery,localWaterways,outerBuildings,wideImagery,forestMeta,forestData,openSpaceData,roofDetailMeta,regionalMeta,regionalPack,regionalMap,regionalWaterways,coastMeta,regionalForest,regionalBuildings,regionalFarPack,railData]=await Promise.all([fetchAsset('./geodata.json').then(r=>r.json()),read('./terrain.bin',Int32Array),read('./terrain-fine.bin',Int32Array),fetchAsset('./buildings.json').then(r=>r.json()),read('./building-roofs.bin',Float32Array),read('./building-walls.bin',Float32Array),fetchAsset('./map.json').then(r=>r.json()),fetchAsset('./roof-imagery.json').then(r=>r.json()),fetchAsset('./waterways.json').then(r=>r.json()),fetchAsset('./buildings-outer.json').then(r=>r.json()),fetchAsset('./roof-imagery-wide.json').then(r=>r.json()),fetchAsset('./forest-mask.json').then(r=>r.json()),read('./forest-mask.bin',Uint8Array),fetchAsset('./open-spaces.json').then(r=>r.json()),fetchAsset('./roof-detail.json').then(r=>r.json()),regionalTerrainMeta,regionalTerrainMeta.then(m=>read('./'+m.packed.file,Uint8Array)),loadRegionalMap(),fetchAsset('./regional-waterways.json').then(r=>r.json()),fetchAsset('./regional-coast.json').then(r=>r.json()),read('./regional-forest.bin',Uint8Array),regionalBuildingMeta,regionalBuildingMeta.then(m=>read('./'+m.farPack.file,Uint8Array)),fetchAsset('./railways.json').then(r=>r.json())]);
  const regionalData=unpackTerrain(regionalPack,regionalMeta.width,regionalMeta.height);
@@ -41,11 +44,7 @@ export async function loadWorld(scene){
  const datum=meta.originElevation,textures=makeTextures(facadeAtlas.image,surfaceAtlas.image),windowMaterials=[],photoMaterials=[],woodlandDensity=forestSampler(forestMeta,forestData),openSpaces=createOpenSpaces(openSpaceData),forestDensity=(x,z)=>{if(openSpaces.at(x,z)||!coast.isLand(x,z))return 0;const w=T.MathUtils.clamp(Math.min(3450-Math.abs(x),3450-Math.abs(z))/150,0,1);return woodlandDensity(x,z)*w+coast.density(x,z)*(1-w)},forestFloorTint=new T.Color('#526b4f');facadeAtlas.dispose();surfaceAtlas.dispose();
  let railways=null;
  const streets=createStreetIndex(map),roofDetail=createRoofDetail(scene,roofDetailMeta,photoMaterials);
- function sample(a,g,x,z){let u=T.MathUtils.clamp((x-g.minX)/g.step,0,g.width-1.000001),v=T.MathUtils.clamp((z-g.minZ)/g.step,0,g.height-1.000001),i=Math.floor(u),j=Math.floor(v),du=u-i,dv=v-j,k=j*g.width+i;return(du+dv<=1?a[k]+du*(a[k+1]-a[k])+dv*(a[k+g.width]-a[k]):a[k+g.width+1]+(1-du)*(a[k+g.width]-a[k+g.width+1])+(1-dv)*(a[k+1]-a[k+g.width+1]))/100-datum}
- const coarseGrid={...meta.terrain,width:meta.terrain.size,height:meta.terrain.size};
- const regionalHeight=(x,z)=>sample(regionalData,regionalMeta,x,z);
- function coarseHeight(x,z){const edge=Math.min(x-coarseGrid.minX,z-coarseGrid.minZ,coarseGrid.minX+(coarseGrid.width-1)*coarseGrid.step-x,coarseGrid.minZ+(coarseGrid.height-1)*coarseGrid.step-z);return edge<0?regionalHeight(x,z):T.MathUtils.lerp(regionalHeight(x,z),sample(coarse,coarseGrid,x,z),Math.min(1,edge/100))}
- function originalGround(x,z){let f=meta.fine;if(x<f.minX||z<f.minZ||x>f.minX+(f.width-1)*f.step||z>f.minZ+(f.height-1)*f.step)return coarseHeight(x,z);const edge=Math.min(x-f.minX,z-f.minZ,f.minX+(f.width-1)*f.step-x,f.minZ+(f.height-1)*f.step-z);return T.MathUtils.lerp(coarseHeight(x,z),sample(fine,f,x,z),Math.min(1,edge/20))}
+ const originalGround=createSurveyGround({meta,coarse,fine,regional:regionalData,regionalMeta});
  function rawGround(x,z){const h=originalGround(x,z);return railways?railways.ground(x,z,h):h}
  railways=createRailways(scene,railData,{datum,textures});
  await globalThis.loadingStage?.('Coastline and harbour');
@@ -58,7 +57,7 @@ export async function loadWorld(scene){
  const groundDetail=createGroundDetail(await fetchAsset('./ground-detail.json').then(r=>r.json()),regionalGround);
  const aerialLayers=[...overviewLayer,{texture:wideTexture,bounds:wideImagery,fade:80},...groundDetail.valleyLayers,{texture:aerialTexture,bounds:roofImagery,fade:50},...groundDetail.layers];
  await globalThis.loadingStage?.('Roads, bridges and tunnels');
- const network=createRoadNetwork(scene,map,hydro,rawGround,textures,tunnels?.applyTerrain,railways,{streamGeometry:{x:0,z:0,radius:1500},roadMaterialHook:(material,style)=>{if(style<5)applyRoadImagery(material,aerialLayers);applyNightLight(material)}}),{roads,nearest}=network;
+ const streetGrades=await streetGradesPack,network=createRoadNetwork(scene,map,hydro,rawGround,textures,tunnels?.applyTerrain,railways,{streetGrades,streamGeometry:{x:0,z:0,radius:1500},roadMaterialHook:(material,style)=>{if(style<5)applyRoadImagery(material,aerialLayers);applyNightLight(material)}}),{roads,nearest}=network;
  railways.setRoads(network.roads);
  const ground=(x,z)=>network.ground(x,z);
  await globalThis.loadingStage?.('Terrain');
