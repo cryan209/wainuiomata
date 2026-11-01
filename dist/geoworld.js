@@ -20,8 +20,8 @@ import {addCanopies} from './canopies.js';
 import {addSideWindows} from './side-windows.js?v=large-houses-94';
 import {createRoofDetail} from './roof-detail.js?v=smooth-junctions-25';
 import {createCoast} from './coast.js?v=boats-81';
-import {createRegionStream} from './region-stream.js?v=rail-stations-103';
-import {createRailways} from './railways.js?v=rail-stations-103';
+import {createRegionStream} from './region-stream.js?v=waterloo-reference-104';
+import {createRailways} from './railways.js?v=waterloo-reference-104';
 import {assembleRegionalMap} from './regional-map.js?v=regions-1';
 const fetchAsset=url=>fetch(url,{cache:'no-cache'});
 const loadRegionalMap=async()=>{const index=await fetchAsset('./regional-map.json').then(r=>r.json());return assembleRegionalMap(index,await Promise.all(index.parts.map(p=>fetchAsset('./'+p.file).then(r=>r.json()))))};
@@ -92,7 +92,7 @@ export async function loadWorld(scene){
  // Below a tunnel or underpass roof only its walls block; buildings, fences and other surface obstacles are overhead.
  function freeSpace(x,z,y,from){if(from&&!railways.canMove(x,z,y,from))return false;if(tunnels&&from&&!tunnels.canMove(x,z,y,from))return false;if(from&&y!==undefined&&network.underpassWall(x,z,y,from))return false;if(y!==undefined&&(network.underpass(x,z,y)||railways.underpass(x,z,y)))return true;return fences.free(x,z)&&freeBuildings(x,z)&&region.free(x,z)}
  function free(x,z,y,from){return freeSpace(x,z,y,from)&&(coast.isLand(x,z)||network.onBridge(x,z,y)||railways.onBridge(x,z)||railways.underpass(x,z,y)||tunnels?.at(x,z,y))&&(!hydro.waterAt(x,z)||network.onBridge(x,z,y)||railways.onBridge(x,z)||railways.underpass(x,z,y)||tunnels?.at(x,z,y))}
- function walkHeight(x,z,y){const tunnel=y!==undefined?tunnels?.walkHeight(x,z,y):null;if(tunnel!==null&&tunnel!==undefined)return tunnel;const road=network.walkHeight(x,z,y),rail=railways.walkHeight(x,z,y);return rail===null||rail===undefined?road:y!==undefined&&Math.abs(road-(y-2))<=Math.abs(rail-(y-2))?road:rail}
+ function walkHeight(x,z,y){const below=y!==undefined&&(network.underpass(x,z,y)||railways.underpass(x,z,y));const station=below?null:region.walkHeight(x,z);if(station!==null&&(y===undefined||Math.abs(station-(y-2))<2))return station;const tunnel=y!==undefined?tunnels?.walkHeight(x,z,y):null;if(tunnel!==null&&tunnel!==undefined)return tunnel;const road=network.walkHeight(x,z,y),rail=railways.walkHeight(x,z,y);return rail===null||rail===undefined?road:y!==undefined&&Math.abs(road-(y-2))<=Math.abs(rail-(y-2))?road:rail}
  const fences=createPropertyFences(scene,{network,ground,hydro,coast,openSpaces,clear:(x,z)=>freeBuildings(x,z)&&region.free(x,z)});
  const fenceGroups=new Map();for(const b of buildings){const p=b.profile||facadeProfile(b),key='local-'+Math.floor(p.x/512)+','+Math.floor(p.z/512);if(!fenceGroups.has(key))fenceGroups.set(key,[]);fenceGroups.get(key).push(b)}for(const[id,parts]of fenceGroups)fences.addChunk(id,parts);
  await globalThis.loadingStage?.('Trees and bush');
