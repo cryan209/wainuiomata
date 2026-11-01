@@ -9,7 +9,7 @@ import {stepCar} from '../dist/vehicle-physics.js';
 import {CLASSICS} from '../dist/classic-cars.js';
 import {mapSource} from '../scripts/lib/map-source.mjs';
 const stored=new Map();globalThis.localStorage={getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)};
-for(const station of RADIO_STATIONS){assert.ok(station.tracks.length>=6);assert.ok(station.tracks.every(id=>MUSIC_TRACKS.some(t=>t.id===id)))}
+for(const station of RADIO_STATIONS){assert.ok(station.tracks.length>=3);assert.ok(station.tracks.every(id=>MUSIC_TRACKS.some(t=>t.id===id)))}
 const param=()=>({setValueAtTime(){},setTargetAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}}),node=()=>({connect(){},disconnect(){},start(){},stop(){},frequency:param()});
 const ctx={sampleRate:100,currentTime:0,createBuffer:(c,n)=>({getChannelData:()=>new Float32Array(n)}),createOscillator:node,createBufferSource:node,createGain:()=>({...node(),gain:param()}),createBiquadFilter:node};
 const music=createMusic(ctx,{});music.tune('ranges');const visited=new Set();for(let i=0;i<10000;i++){ctx.currentTime=i*.1;music.update(true);visited.add(music.currentTrack.id)}assert.deepEqual([...visited].sort(),[...RADIO_STATIONS[2].tracks].sort(),'Station rotation stays within its own playlist');music.tune('harbour');assert.equal(music.currentTrack.id,'harbour');

@@ -420,11 +420,11 @@ A shared large supermarket interior includes long stocked grocery aisles, produc
 
 ## Music playlist and vehicle audio
 
-Controls → Music track selects Valley Afterglow (warm keys), Harbour Lights (house), Hill Road FM (breakbeat), Coast Road Sunday (slow keys) or Morning in the Ranges (ambient). The playlist now contains twelve arrangements; Auto rotates through all twelve after 32 bars apiece; selecting a track repeats that arrangement. Selection and independent music/effects levels persist locally. These are original procedural instrumental arrangements, generated in the browser.
+Controls → Music track selects Valley Afterglow (warm keys), Harbour Lights (house), Hill Road FM (breakbeat), Coast Road Sunday (slow keys) or Morning in the Ranges (ambient). The playlist now contains eighteen arrangements; Auto rotates through all eighteen after 32 bars apiece; selecting a track repeats that arrangement. Selection and independent music/effects levels persist locally. These are original procedural instrumental arrangements, generated in the browser.
 
 Vehicle sound now layers RPM-driven firing pulses, filtered exhaust and intake, with different four/six-cylinder and diesel tones and a brief load dip on gear changes. Trains have traction whine, rhythmic rail rumble and an air-brake release; helicopters have a pulsing rotor and air wash; bicycles have chain/freewheel noise and an H bell. Tyre noise follows road speed, flooded engines stop, and leaving a vehicle fades its layers. Effects are synthesised approximations, not recordings of the named models.
 
-Run `node tests/sound.mjs` and `node tests/audio-arrangements.mjs` for audio controls, all five playlist arrangements, pause/resume, vehicle layers, gear changes, flooding, brake release and audio graph reuse.
+Run `node tests/sound.mjs` and `node tests/audio-arrangements.mjs` for audio controls, all eighteen playlist arrangements, pause/resume, vehicle layers, gear changes, flooding, brake release and audio graph reuse.
 
 
 ## Valley FM radio
@@ -438,7 +438,7 @@ In automatic Valley FM mode, a short fictional radio spot plays after every two 
 
 ## Dashboard radio, street ambience, rain and lookouts
 
-While driving, the dashboard stereo offers three fictional stations: Valley FM (92.4, all twelve tracks and optional local ads), Harbour Heat (98.6, dance/funk) and Ranges Radio (88.2, mellow/ambient). Use [ / ] to tune, or J to release mouse capture and use the preset buttons, tuning slider, volume and power. Stations also appear in Controls. A brief burst of static accompanies tuning. Station, volume and power preferences persist. Choosing a specific track repeats it without ads.
+While driving, the dashboard stereo offers eight fictional stations, including Valley FM (92.4, all eighteen tracks and optional local ads), Harbour Heat (98.6, dance/funk, rock and arcade) and Ranges Radio (88.2, mellow/ambient, slow rock and 8-bit). Use [ / ] to tune, or J to release mouse capture and use the preset buttons, tuning slider, volume and power. Stations also appear in Controls. A brief burst of static accompanies tuning. Station, volume and power preferences persist. Choosing a specific track repeats it without ads.
 
 A fixed pool of synthesised voices follows up to three nearby moving traffic vehicles with distance, vertical separation and stereo panning. Birds favour dry daytime conditions, wind responds to mapped woodland density, occasional distant dogs punctuate inhabited streets, and entering/exiting an interior rings a shop bell. Vehicle cabins reduce outdoor ambience. These are lightweight sound approximations, not wildlife recordings.
 
@@ -576,3 +576,21 @@ The startup download is about 48 MB (it was about 72 MB, both as gzipped by GitH
 - **Compact road map.** `lib/regional_map.save_map` rounds coordinates to 1 cm and drops OSM bookkeeping tags the game never reads (`source`, `attribution`, `LINZ:*`, `note`, …). This saves about 1.2 MB across the road map and waterways.
 
 Building the world after download still takes about 28 s on a fast machine. The biggest costs are the region-wide road network (about 9 s: profiles, grades and terrain shoulders for all 64 000 ways) and street furniture planned across the whole region (about 5 s). Streaming those by area would be the next step.
+
+## Rock and 8-bit music
+
+Six more original procedural tracks bring the playlist to eighteen. Controls → Music track adds Summit Overdrive (rock), Naenae Garage (punk rock), South Coast Bonfire (slow rock), Queen Street Arcade, Pixel Coast Run and Ranges Save Point (8-bit). Rock uses filtered sawtooth power chords, palm-muted riffs, bass, driving drums and fuller chorus sections. The 8-bit arrangements use short square-wave arpeggios and pulse leads over triangle bass and noise percussion. All tracks synthesize locally without audio downloads.
+
+Valley FM rotates through all eighteen tracks. Harbour Heat adds the faster rock and arcade tracks; Ranges Radio adds Bonfire and Save Point. Selecting a track repeats it with the existing music volume, mute and saved preferences. Run `node tests/audio-arrangements.mjs`, `node tests/sound.mjs`, `node tests/radio.mjs` and `node tests/radio-rain-lookouts.mjs` for playlist, instrument, scheduling and radio checks.
+
+## More radio stations
+
+The dashboard and Controls → Radio station now offer eight fictional stations. The original three remain, joined by Summit Rock (101.3 FM, rock/punk/slow rock), Pixel FM (106.4 FM, 8-bit), Petone Groove (94.7 FM, funk/dub), Night Drive (103.8 FM, synth/garage/breakbeat) and Coast Keys (90.1 FM, mellow keys/ambient). Each plays a curated selection from the eighteen existing arrangements. All eight have dashboard presets; the tuning dial, previous/next buttons and [ / ] keys cycle through the complete station list. Station choice still saves locally.
+
+Run `node tests/radio-stations.mjs` for station uniqueness, complete playlist rotation, preset/dial access, wraparound tuning and dashboard state.
+
+## Vocal hooks
+
+Harbour Lights, Petone Sunset Dub, Summit Overdrive, Naenae Garage and Queen Street Arcade now have original synthetic vocal hooks. Look for “Vocals” in Controls → Music track. Two short phrases alternate at chorus entries (bars 5, 13, 21 and 29), leaving room for the instrumentals. Rock tracks use rhythmic chants, the house/dub tracks use spoken hooks, and Arcade uses a crushed robotic voice. These are synthetic voices, rather than recorded singers.
+
+Only the current track's two samples load and decode, once per session. They follow the music volume/mute, pause, hidden-tab and station/track changes through the existing music voice envelopes. Failed sample loads leave the backing playing. Ten mono MP3 hooks are packaged under `dist/audio/vocals`; no speech service or microphone is used at runtime. Original lyrics, voices and timing are in `dist/vocal-hooks.js`. Rebuild with `python3 scripts/build_music_vocals.py` on macOS with `say`, ffmpeg and ffprobe. Run `node tests/music-vocals.mjs` alongside the existing audio and radio checks.

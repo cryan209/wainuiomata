@@ -1,9 +1,9 @@
-import {RADIO_STATIONS,radioStation} from './radio-stations.js';
+import {RADIO_STATIONS,radioStation} from './radio-stations.js?v=stations-2';
 import {createAmbientAudio} from './ambient-audio.js?v=radio-rain-88';
 import {createRadio} from './radio.js?v=radio-87';
-import {createMusic,MUSIC_TRACKS} from './music.js?v=radio-rain-88';
+import {createMusic,MUSIC_TRACKS} from './music.js?v=vocals-1';
 import {createVehicleAudio} from './vehicle-audio.js?v=moto-1';
-// Small procedural soundscape: no audio downloads or persistent microphone access.
+// Procedural soundscape with packaged radio spots and synthetic vocal hooks.
 export function createSound({world}){
  let vehicleAudio,ambientAudio,tuningGain,tuningUntil=0,adTitle='',stationId='valley',radio,radioBus,musicTrack='auto',radioAds=true;
  let ctx,master,effectsBus,musicBus,music,waterFilter,splashGain,splashEnvelope=0,lastSplash=0,lastSoundTime=0,windGain,waterGain,hornGain,horn,skidGain,squeal,squealGain,muted=false,volume=.85,musicVolume=.4,musicMuted=false;
@@ -25,7 +25,7 @@ export function createSound({world}){
  function setRadioPower(enabled){musicMuted=!enabled;save();start();if(!enabled){radio?.stop();music?.update(false)}const mute=$('#music-muted');if(mute)mute.checked=musicMuted}
  function setMusicVolume(value){musicVolume=Math.max(0,Math.min(1,Number(value)||0));save();start();const slider=$('#music-volume');if(slider)slider.value=String(musicVolume)}
  const stationSelect=$('#radio-station');if(stationSelect){stationSelect.replaceChildren();for(const station of RADIO_STATIONS){const option=document.createElement('option');option.value=station.id;option.textContent=`${station.frequency} FM · ${station.name}`;stationSelect.append(option)}stationSelect.value=stationId;stationSelect.onchange=()=>tune(stationSelect.value)}
- const trackSelect=$('#music-track');if(trackSelect){trackSelect.replaceChildren();for(const track of [{id:'auto',name:'Station playlist · automatic'},...MUSIC_TRACKS]){const option=document.createElement('option');option.value=track.id;option.textContent=track.name;trackSelect.append(option)}trackSelect.value=musicTrack;trackSelect.onchange=()=>{musicTrack=trackSelect.value;save();start();radio?.stop();music?.select(musicTrack)}}
+ const trackSelect=$('#music-track');if(trackSelect){trackSelect.replaceChildren();for(const track of [{id:'auto',name:'Station playlist · automatic'},...MUSIC_TRACKS]){const option=document.createElement('option');option.value=track.id;option.textContent=track.name+(track.vocals?' · Vocals':'');trackSelect.append(option)}trackSelect.value=musicTrack;trackSelect.onchange=()=>{musicTrack=trackSelect.value;save();start();radio?.stop();music?.select(musicTrack)}}
  const ads=$('#radio-ads');if(ads){ads.checked=radioAds;ads.onchange=()=>{radioAds=ads.checked;save();if(!radioAds)radio?.stop()}}
  const musicMute=$('#music-muted'),musicSlider=$('#music-volume');if(musicMute)musicMute.onchange=()=>{musicMuted=musicMute.checked;save();start()};if(musicSlider)musicSlider.oninput=()=>{musicVolume=Number(musicSlider.value);save();start()};
  const mute=$('#sound-muted'),slider=$('#sound-volume');if(mute)mute.onchange=()=>{muted=mute.checked;save();start()};if(slider)slider.oninput=()=>{volume=Number(slider.value);save();start()};if(slider)slider.value=String(volume);if(mute)mute.checked=muted;if(musicSlider)musicSlider.value=String(musicVolume);if(musicMute)musicMute.checked=musicMuted;addEventListener('keydown',e=>{if(e.key.toLowerCase()==='h')e.preventDefault()});addEventListener('blur',()=>{if(ctx)level(master,0);radio?.stop()});document.addEventListener('visibilitychange',()=>{if(ctx&&document.hidden){level(master,0);radio?.stop()}});return{start,update,tune,setRadioPower,setMusicVolume,get radioState(){return {station:stationId,power:!musicMuted,volume:musicVolume,track:ctx&&ctx.currentTime<tuningUntil?'Tuning…':music?.currentTrack.name||radioStation(stationId).tagline,ad:adTitle}}};
