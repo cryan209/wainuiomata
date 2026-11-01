@@ -22,6 +22,7 @@ vehicles.update({kind:'car',speed:12,rpm:2000,cylinders:6,gear:3},{w:true});asse
 vehicles.update({kind:'car',speed:0,flooded:true});assert.equal(levels()[0],0);assert.equal(levels()[1],0);
 vehicles.update({kind:'heli',speed:8,rpm:1200});assert.ok(levels()[3]>0);assert.equal(levels()[0],0);assert.equal(levels()[6],0);
 vehicles.update({kind:'bike',speed:5},{w:true,h:true});assert.ok(levels()[5]>0&&levels()[9]>0);assert.equal(levels()[0],0);
+vehicles.update({kind:'moto',speed:20,rpm:9000,cylinders:1,gear:3,dirt:true},{w:true,h:true});assert.ok(levels()[0]>0&&levels()[1]>0&&levels()[6]>0,'Motorbikes run the engine and road layers');assert.equal(levels()[5],0,'Motorbikes use the horn, not the bicycle bell');
 vehicles.update({kind:'train',speed:8},{s:true});assert.ok(levels()[4]>0&&levels()[8]>0);
 vehicles.update({kind:'train',speed:0},{});assert.ok(levels()[8]>0,'Stopping releases the air brake');b.ctx.currentTime+=1;vehicles.update({kind:'train',speed:0},{});assert.equal(levels()[8],0);
 vehicles.update({kind:'car',speed:15},{},{rain:1,wiperSwish:.8});assert.ok(levels()[10]>0&&levels()[11]>0,'Rain adds wet tyre hiss and wiper swishes');vehicles.update(null);assert.ok(levels().every(v=>v===0),'Exiting silences every vehicle layer');
