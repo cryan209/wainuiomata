@@ -12,7 +12,7 @@ const scene=new T.Scene(),camera=new T.PerspectiveCamera(),world={bounds:{minX:-
 const ride=createTrainRide({scene,railways:{trains:[train],data:{stations:[{name:'Petone',x:0,z:-500},{name:'Wellington',x:0,z:0},{name:'Upper Hutt',x:0,z:-1000}]}},world,camera,status:{},onAnnouncement:e=>events.push(e),onNextStation:name=>prepared.push(name)});
 ride.enter(0);assert.deepEqual(events,[{kind:'welcome',station:''}]);assert.equal(prepared.at(-1),'Petone');
 train.distance=240;ride.update(.05);assert.deepEqual(events.at(-1),{kind:'approach',station:'Petone'});const once=events.length;for(let i=0;i<20;i++)ride.update(0);ride.cycleSeat();ride.toggleView();assert.equal(events.length,once,'Approach does not repeat every frame, seat or view change');
-train.distance=500;ride.update(.05);assert.deepEqual(events.at(-1),{kind:'arrival',station:'Petone'});assert.equal(train.wait,8);
+train.distance=500;ride.update(.05);assert.deepEqual(events.at(-1),{kind:'arrival',station:'Petone'});assert.equal(train.distance,500,'Announcements never rewind the physical service');
 train.wait=0;train.distance=800;ride.update(.05);assert.deepEqual(events.at(-1),{kind:'approach',station:'Upper Hutt'});
 train.distance=976;train.direction=-1;train.wait=7;ride.update(.05);assert.deepEqual(events.at(-1),{kind:'arrival',station:'Upper Hutt'},'Terminal reversal gets an arrival announcement');
 train.wait=0;train.distance=740;ride.update(.05);assert.deepEqual(events.at(-1),{kind:'approach',station:'Petone'},'Return journey announces stations again');

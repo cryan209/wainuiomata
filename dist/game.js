@@ -1,5 +1,5 @@
 import {createTrainLineControls} from './train-lines.js?v=train-lines-1';
-import {createTrainRide} from './train-ride.js?v=train-pa-1';
+import {createTrainRide} from './train-ride.js?v=train-motion-1';
 import {nextRadioStation} from './radio-stations.js?v=stations-2';
 import {createCellTowers} from './cell-towers.js?v=cells-90';
 import {createRadioTowers,towerDestinations} from './radio-towers.js?v=towers-89';
@@ -11,8 +11,8 @@ import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js?v=house-interiors-95';
 import {createBusService} from './bus-service.js?v=textured-peds-70';
 import {createWaterWorld} from './water-world.js?v=regional-tunnels-101';
-import {loadWorld} from './geoworld.js?v=street-grades-1';
-import {createSound} from './sound.js?v=train-pa-1';
+import {loadWorld} from './geoworld.js?v=train-motion-1';
+import {createSound} from './sound.js?v=train-motion-1';
 import {createPerformanceHUD} from './performance.js?v=utility-scenery-93';
 import {addSky} from './textures.js';
 import {createDayNight} from './day-night.js?v=night-vision-75';

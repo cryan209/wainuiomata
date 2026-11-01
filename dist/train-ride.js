@@ -1,3 +1,4 @@
+import {configureTrainService} from './train-service.js?v=train-motion-1';
 import * as T from './vendor/three.js';
 import {findLanding} from './movement.js?v=cockpit-breakaway-53';
 import {createTrainCarriage,TRAIN_SEATS,trainCarPose} from './train-carriage.js?v=train-ride-1';
@@ -11,11 +12,7 @@ export function createTrainRide({scene,railways,world,camera,status,onAnnounceme
   train=selected;boarding={x:camera.position.x,z:camera.position.z};projection={near:camera.near,fov:camera.fov};
   seatIndex=0;inside=true;lookYaw=.28;lookPitch=-.06;train.passenger=true;train.controlled=false;lastDistance=train.distance;lastStop=null;
   stops=[];announcementStops=[];approached.clear();arrived.clear();lastDirection=train.direction;prepared=null;
-  if(train.path.nearest)for(const station of railways.data?.stations||[]){
-   const hit=train.path.nearest(station.x,station.z);if(hit.distance>=65)continue;
-   const s=T.MathUtils.clamp(hit.s-10,24,train.path.length-24);if(announcementStops.some(stop=>Math.abs(stop.s-s)<90))continue;
-   const stop={name:station.name,s};announcementStops.push(stop);if(hit.s-10>24&&hit.s-10<train.path.length-24)stops.push(stop);
-  }
+  announcementStops=configureTrainService(train,railways.data?.stations||[]).filter(stop=>stop.station);stops=announcementStops;
   onAnnouncement({kind:'welcome',station:''});
   carriage??=createTrainCarriage();if(!carriage.group.parent)scene.add(carriage.group);update(0);return true;
  }
@@ -38,20 +35,20 @@ export function createTrainRide({scene,railways,world,camera,status,onAnnounceme
    const terminal=announcementStops.find(stop=>Math.abs(stop.s-train.distance)<3);announceArrival(terminal);
    approached.clear();arrived.clear();if(terminal)arrived.add(key(terminal));lastDirection=train.direction;prepared=null;
   }
-  const upcoming=announcementStops.filter(stop=>train.direction*(stop.s-train.distance)>3).sort((a,b)=>train.direction*(a.s-b.s))[0];
+  const upcoming=announcementStops.filter(stop=>train.direction*(stop.s-train.distance)>.001).sort((a,b)=>train.direction*(a.s-b.s))[0];
   if(upcoming&&prepared!==key(upcoming)){prepared=key(upcoming);onNextStation(upcoming.name)}
   if(upcoming&&train.wait<=0&&Math.abs(upcoming.s-train.distance)<=250&&!approached.has(key(upcoming))){approached.add(key(upcoming));onAnnouncement({kind:'approach',station:upcoming.name})}
-  // Dwell at mapped stations crossed by the automatic service; no player throttle is used.
+  // Observe arrivals after the rail service has moved, before placing the camera.
   if(lastStop&&Math.abs(train.distance-lastStop.s)>50)lastStop=null;
   const crossed=stops.find(s=>s!==lastStop&&(train.direction>0?s.s>lastDistance&&s.s<=train.distance:s.s<lastDistance&&s.s>=train.distance));
-  if(crossed){train.distance=crossed.s;train.wait=8;lastStop=crossed;announceArrival(crossed)}
+  if(crossed){lastStop=crossed;announceArrival(crossed)}
   lastDistance=train.distance;
   carriage.update(train,night);const pose=trainCarPose(train);
   if(inside){const seat=TRAIN_SEATS[seatIndex];camera.position.copy(new T.Vector3(seat.x,seat.y,seat.z).applyQuaternion(pose.quaternion).add(pose.position));camera.quaternion.copy(pose.quaternion).multiply(new T.Quaternion().setFromEuler(new T.Euler(lookPitch,seat.yaw+lookYaw,0,'YXZ')));camera.near=.035;camera.fov=72}
   else{camera.position.copy(new T.Vector3(7,5,17).applyQuaternion(pose.quaternion).add(pose.position));camera.lookAt(pose.position.clone().add(new T.Vector3(0,1.6,0)));camera.near=projection.near;camera.fov=projection.fov}
   camera.updateProjectionMatrix();
-  status.textContent=`RIDING · ${train.name} · ${train.wait>0?'STOPPED'+(lastStop&&Math.abs(train.distance-lastStop.s)<1?' · '+lastStop.name:' · TERMINUS'):Math.round(13*3.6)+' KM/H'} · ${inside?TRAIN_SEATS[seatIndex].name:'EXTERIOR'} · E SEAT · V VIEW · F GET OFF`;
+  status.textContent=`RIDING · ${train.name} · ${train.wait>0?'STOPPED'+(lastStop&&Math.abs(train.distance-lastStop.s)<1?' · '+lastStop.name:' · TERMINUS'):Math.round((train.speed||0)*3.6)+' KM/H'} · ${inside?TRAIN_SEATS[seatIndex].name:'EXTERIOR'} · E SEAT · V VIEW · F GET OFF`;
   return true;
  }
- return {enter,exit,update,cycleSeat,toggleView,look,get active(){return !!train},get train(){return train},get inside(){return !!train&&inside},get seatName(){return TRAIN_SEATS[seatIndex].name},get seatIndex(){return seatIndex},get model(){return carriage?.group},get soundState(){return train?{kind:'train',speed:train.wait>0?0:13,passenger:true}:null}};
+ return {enter,exit,update,cycleSeat,toggleView,look,get active(){return !!train},get train(){return train},get inside(){return !!train&&inside},get seatName(){return TRAIN_SEATS[seatIndex].name},get seatIndex(){return seatIndex},get model(){return carriage?.group},get soundState(){return train?{kind:'train',speed:train.speed||0,braking:!!train.braking,passenger:true}:null}};
 }
