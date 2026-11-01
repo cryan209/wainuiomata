@@ -1,8 +1,8 @@
 import * as T from './vendor/three.js';
 import {findLanding} from './movement.js?v=cockpit-breakaway-53';
 import {createTrainCarriage,TRAIN_SEATS,trainCarPose} from './train-carriage.js?v=train-ride-1';
-export function createTrainRide({scene,railways,world,camera,status}){
- let train=null,carriage=null,seatIndex=0,inside=true,lookYaw=0,lookPitch=0,boarding=null,projection=null,stops=[],lastDistance=0,lastStop=null;
+export function createTrainRide({scene,railways,world,camera,status,onAnnouncement=()=>{},onNextStation=()=>{}}){
+ let train=null,carriage=null,seatIndex=0,inside=true,lookYaw=0,lookPitch=0,boarding=null,projection=null,stops=[],lastDistance=0,lastStop=null,announcementStops=[],approached=new Set(),arrived=new Set(),lastDirection=1,prepared=null;
  function enter(routeIndex){
   if(!railways.trains.length)return false;
   exit();
@@ -10,12 +10,18 @@ export function createTrainRide({scene,railways,world,camera,status}){
   if(!selected)return false;
   train=selected;boarding={x:camera.position.x,z:camera.position.z};projection={near:camera.near,fov:camera.fov};
   seatIndex=0;inside=true;lookYaw=.28;lookPitch=-.06;train.passenger=true;train.controlled=false;lastDistance=train.distance;lastStop=null;
-  stops=[];
-  if(train.path.nearest)for(const station of railways.data?.stations||[]){const hit=train.path.nearest(station.x,station.z);if(hit.distance<65&&hit.s-10>24&&hit.s-10<train.path.length-24&&!stops.some(s=>Math.abs(s.s-(hit.s-10))<90))stops.push({name:station.name,s:hit.s-10})}
+  stops=[];announcementStops=[];approached.clear();arrived.clear();lastDirection=train.direction;prepared=null;
+  if(train.path.nearest)for(const station of railways.data?.stations||[]){
+   const hit=train.path.nearest(station.x,station.z);if(hit.distance>=65)continue;
+   const s=T.MathUtils.clamp(hit.s-10,24,train.path.length-24);if(announcementStops.some(stop=>Math.abs(stop.s-s)<90))continue;
+   const stop={name:station.name,s};announcementStops.push(stop);if(hit.s-10>24&&hit.s-10<train.path.length-24)stops.push(stop);
+  }
+  onAnnouncement({kind:'welcome',station:''});
   carriage??=createTrainCarriage();if(!carriage.group.parent)scene.add(carriage.group);update(0);return true;
  }
  function exit(){
   if(!train)return false;
+  onAnnouncement(null);
   const pose=trainCarPose(train),side=new T.Vector3(3.6,0,0).applyQuaternion(pose.quaternion).add(pose.position);
   const safeWorld={bounds:world.bounds,free(x,z){const rail=railways.at?.(x,z,0),water=world.water?.at(x,z);return world.free(x,z)&&(!rail||rail.d>2.8)&&(!water||water.depth<.7||world.water.supported?.(x,z,world.walkHeight(x,z)+2))}};
   const p=findLanding(safeWorld,side.x,side.z,boarding);camera.position.set(p.x,world.walkHeight(p.x,p.z)+2,p.z);
@@ -26,10 +32,19 @@ export function createTrainRide({scene,railways,world,camera,status}){
  function look(dx,dy){if(!train||!inside)return false;lookYaw=Math.atan2(Math.sin(lookYaw-dx*.0025),Math.cos(lookYaw-dx*.0025));lookPitch=T.MathUtils.clamp(lookPitch-dy*.0025,-1.05,1.05);return true}
  function update(dt,night=0){
   if(!train)return false;
+  const key=stop=>stop.name+'|'+stop.s;
+  const announceArrival=stop=>{if(!stop||arrived.has(key(stop)))return;arrived.add(key(stop));onAnnouncement({kind:'arrival',station:stop.name})};
+  if(train.direction!==lastDirection){
+   const terminal=announcementStops.find(stop=>Math.abs(stop.s-train.distance)<3);announceArrival(terminal);
+   approached.clear();arrived.clear();if(terminal)arrived.add(key(terminal));lastDirection=train.direction;prepared=null;
+  }
+  const upcoming=announcementStops.filter(stop=>train.direction*(stop.s-train.distance)>3).sort((a,b)=>train.direction*(a.s-b.s))[0];
+  if(upcoming&&prepared!==key(upcoming)){prepared=key(upcoming);onNextStation(upcoming.name)}
+  if(upcoming&&train.wait<=0&&Math.abs(upcoming.s-train.distance)<=250&&!approached.has(key(upcoming))){approached.add(key(upcoming));onAnnouncement({kind:'approach',station:upcoming.name})}
   // Dwell at mapped stations crossed by the automatic service; no player throttle is used.
   if(lastStop&&Math.abs(train.distance-lastStop.s)>50)lastStop=null;
   const crossed=stops.find(s=>s!==lastStop&&(train.direction>0?s.s>lastDistance&&s.s<=train.distance:s.s<lastDistance&&s.s>=train.distance));
-  if(crossed){train.distance=crossed.s;train.wait=8;lastStop=crossed}
+  if(crossed){train.distance=crossed.s;train.wait=8;lastStop=crossed;announceArrival(crossed)}
   lastDistance=train.distance;
   carriage.update(train,night);const pose=trainCarPose(train);
   if(inside){const seat=TRAIN_SEATS[seatIndex];camera.position.copy(new T.Vector3(seat.x,seat.y,seat.z).applyQuaternion(pose.quaternion).add(pose.position));camera.quaternion.copy(pose.quaternion).multiply(new T.Quaternion().setFromEuler(new T.Euler(lookPitch,seat.yaw+lookYaw,0,'YXZ')));camera.near=.035;camera.fov=72}

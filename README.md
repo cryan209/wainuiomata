@@ -604,10 +604,26 @@ Only the current track's two samples load and decode, once per session. They fol
 
 ## Ride inside a train
 
-Press **L** to board the nearest running train as a seated passenger, or choose **Ride inside a train · passenger** in Controls → Explore the region. Route-specific “Ride inside” entries select the Hutt Valley, Kāpiti, Johnsonville and Wairarapa services. **T** retains the existing manual train-driving mode. Touch controls include **RIDE TRAIN**, **SEAT** and **CAMERA**.
+Press **L** to board the nearest running train as a seated passenger, or choose **Ride inside a train · passenger** in Controls → Explore the region. Route-specific “Ride inside” entries select the Hutt Valley, Kāpiti, Johnsonville, Wairarapa and Melling services. **T** retains the existing manual train-driving mode. Touch controls include **RIDE TRAIN**, **SEAT** and **CAMERA**.
 
 The modeled coach has forty upholstered seats in a 2+2 layout, a central aisle, clear window openings, sliding-door panels and windows, grab poles, luggage racks, ceiling lights and route displays. Eight selectable window viewpoints face into the carriage. Mouse/drag looks around, **E** changes seats, **V** switches between the seated and exterior views, and **F** or **L** gets off onto nearby clear ground. Movement keys do not drive the train while you are a passenger.
 
 The service follows its mapped route automatically at about 47 km/h, pauses for eight seconds at mapped stations on its path and reverses at route ends. The timetable, carriage and furnishings are fictional game representations. The carriage and seated camera share the same route position and slope; reversing changes travel direction without spinning the physical coach. The detailed model replaces only the occupied coach, is built on first boarding and is reused across seats and routes. Its windows retain views of the live world, and interior lighting stays on at night.
 
 Run `node tests/train-ride.mjs` for the modeled seats, clear window views, camera alignment on grades/curves, automatic service, station dwell, reversal, controls, exit and model reuse. Existing driving, cockpit, station and tunnel tests cover regression behavior.
+
+## Passenger train lines
+
+The passenger panel now has a **LINE** selector, and Controls has **Ride a train · Choose a line** above the regional travel list. Both let you board Hutt Valley (Wellington–Upper Hutt), Kāpiti (Wellington–Waikanae), Johnsonville, Wairarapa Connection (as far as Featherston in this world) and Melling directly. Changing the line boards that service in its modeled carriage; both selectors stay in sync. **L** still boards the nearest running train.
+
+The Melling service uses three mapped ways that the retained OSM snapshot marks as construction/disused, restored for this game's fictional 2002 setting. The approximately 1.1 km missing branch joins the existing rail at a shared source node and follows the mapped alignment through to Melling; it is not a straight-line shortcut. The full Wellington–Melling route is about 13.7 km and passes Western Hutt. New branch levels interpolate between the existing track and terminal ground and are illustrative, not surveyed. Existing rail geometry and the other four running routes are preserved.
+
+Rebuild this addition after geographic rail imports with `/private/tmp/wainui-gis/bin/python scripts/add_melling_service.py` (pyproj and the retained OSM cache). Source way IDs and attribution are in `railways.json` under `mellingService`. Run `node tests/train-lines.mjs`, `node tests/train-ride.mjs` and `node tests/weather-railways.mjs` for connected routes, selectors, carriage boarding and rail grades; `tests/north-east.py` now expects all five services.
+
+## Train station announcer
+
+Passenger journeys now have a synthetic carriage PA: a welcome when boarding, “Now approaching Petone station” (and the matching station name) within 250 m of the next stop, and “This is Petone station” on arrival. A soft two-tone chime precedes the voice. The 42 mapped stations served by the five running lines have approach and arrival clips, including termini. Each cue fires once per visit and works in both directions; changing seats or views does not repeat it.
+
+The passenger panel shows matching announcement captions. Sound effects volume and all-audio mute control the PA independently of music mute, and music lowers briefly during announcements. Controls → **Train station announcements** switches it off and saves the preference. Pausing, hiding the tab, getting off or changing lines cancels the current/pending speech. Only the welcome and upcoming station's clips load; failed audio keeps a short caption fallback. Voices are packaged locally, with no live speech service or microphone.
+
+`python3 scripts/build_train_announcements.py` regenerates the 85 mono MP3 announcements on macOS with `say`, ffmpeg and ffprobe. The station list comes from the bundled mapped rail routes; source text, durations and voice are in `dist/train-announcement-clips.js`. Run `node tests/train-announcer.mjs`, plus the train ride/line and sound checks, for route cues, reversal/terminal behavior, playback caching, captions, pause/mute/exit cancellation and offline fallback.

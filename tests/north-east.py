@@ -33,7 +33,7 @@ assert (D/'regional-far.bin').stat().st_size==manifest['count']*8*4,'One far-vie
 # Railway: Wellington station to every terminus, connected, under a 3% ruling grade on new track.
 rail=load('railways.json');station={s['name']:s for s in rail['stations']}
 for name in ['Wellington','Johnsonville','Porirua','Paekākāriki','Paraparaumu','Waikanae','Featherston','Petone','Upper Hutt']:assert name in station,name
-ends={'Hutt Valley commuter':'Upper Hutt','Kāpiti commuter':'Waikanae','Johnsonville commuter':'Johnsonville','Wairarapa Connection':'Featherston'}
+ends={'Hutt Valley commuter':'Upper Hutt','Kāpiti commuter':'Waikanae','Johnsonville commuter':'Johnsonville','Wairarapa Connection':'Featherston','Melling commuter':'Melling'}
 assert rail['routes'][0]['name']=='Hutt Valley commuter' and {r['name'] for r in rail['routes']}==set(ends)
 for r in rail['routes']:
  p=r['p'];w,e=station['Wellington'],station[ends[r['name']]]
@@ -46,4 +46,4 @@ for r in rail['routes']:
   d=math.hypot(b['x']-a['x'],b['z']-a['z']);assert d<10,(r['name'],a,b)
   if not {a['node'],b['node']}<=surveyed:assert abs(b['h']-a['h'])<=.031*d+.01,(r['name'],a,b)
 kapiti=rail['routes'][1]['p'];assert 50000<sum(math.hypot(b['x']-a['x'],b['z']-a['z']) for a,b in zip(kapiti,kapiti[1:]))<60000,'Wellington–Waikanae is about 55km'
-print('PASS: Porirua, Kāpiti Coast and Wairarapa terrain, sea, streets and buildings; preserved earlier samples; Wellington station with graded Hutt, Kāpiti, Johnsonville and Wairarapa routes.')
+print('PASS: Porirua, Kāpiti Coast and Wairarapa terrain, sea, streets and buildings; preserved earlier samples; Wellington station with graded Hutt, Kāpiti, Johnsonville, Wairarapa and Melling routes.')
