@@ -1,4 +1,5 @@
 import * as T from './vendor/three.js';
+import {streamBudget} from './frame-budget.js?v=1';
 import {weldVertices,releaseAfterUpload} from './spatial-split.js?v=paced-1';
 import {isWaterlooCanopy,isWaterlooFar,waterlooCanopyPlan,addWaterlooCanopy} from './station-canopies.js?v=waterloo-reference-104';
 import {regionalRoof,farRoofGeometry} from './regional-roofs.js?v=roof-profiles-56';
@@ -6,7 +7,7 @@ import {vegetationClear} from './river-clearance.js?v=cells-90';
 import {facadeProfile,hash,FACADE_COUNT,largeHouseEligible} from './appearance.js?v=large-houses-94';
 import {mergeFacadeBatchSteps} from './facade-array.js?v=paced-1';
 import {buildingFaces,wallStyle,wallTextureScale} from './building-faces.js?v=large-houses-94';
-import {addCanopies} from './canopies.js';
+import {addCanopies} from './canopies.js?v=low-end-3';
 import {addSideWindowSteps} from './side-windows.js?v=paced-1';
 function inside(r,x,z){let hit=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const a=r[i],b=r[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
 export function regionalCommercial(building,streets){const p=facadeProfile(building),road=streets.closest(p.x,p.z);p.shop=p.area>140&&p.area<12000&&road?.d<48&&['Jackson Street','High Street','Queens Drive','Rimu Street','Bunny Street','Knights Road','The Esplanade','Main Street','Pine Avenue','Lambton Quay','Willis Street','Cuba Street','Manners Street','Courtenay Place','Dixon Street','Featherston Street','Victoria Street','Riddiford Street','Karori Road','Bay Road','Miramar Avenue'].includes(road.name);p.industrial=(p.area>1800||building.height>8)&&!p.shop&&!building.landmark;if(building.facade==='plain')p.shop=p.industrial=false;p.largeHouse=largeHouseEligible(building,p);return p}
@@ -46,7 +47,7 @@ export function createRegionStream(scene,manifest,farData,{ground,datum,textures
   {const g=yield* mergeFacadeBatchSteps(batches);if(g)group.add(new T.Mesh(releaseAfterUpload(g),wallMaterial))}yield;c.roofMesh=mesh(group,roofs,roofUV,roofMaterial,roofC,roofPhotoUV);yield;c.ownedWindows=[];const enclosed=buildings.filter(b=>!b.railCanopy),ownWindows=[];addCollision(c,enclosed);fences?.addChunk(c.id,enclosed);yield;c.canopies=addCanopies(group,enclosed,{ground,datum,textures});yield;// Collected apart and handed over at once: another chunk may unload from the shared list between steps.
   yield* addSideWindowSteps(group,enclosed,{ground,datum,textures,windowMaterials:ownWindows});windowMaterials.push(...ownWindows);c.ownedWindows=ownWindows;c.railPosts=railPosts.concat(canopyPosts);c.stationLayouts=stationLayouts;if(railPosts.length){const posts=new T.InstancedMesh(new T.BoxGeometry(.14,1,.14),new T.MeshLambertMaterial({color:'#82938c'}),railPosts.length);for(let i=0;i<railPosts.length;i++){const p=railPosts[i];dummy.position.set(p.x,(p.y+p.top)/2,p.z);dummy.rotation.set(0,0,0);dummy.scale.set(1,Math.max(.5,p.top-p.y),1);dummy.updateMatrix();posts.setMatrixAt(i,dummy.matrix)}posts.computeBoundingSphere();group.add(posts)}yield;forest(c,group);scene.add(group);c.group=group;c.lastUsed=performance.now();if(c.far)c.far.visible=false;
  }
- const buildQueue=[];let buildJob=null;function scheduleBuild(c,data){return new Promise(resolve=>buildQueue.push({generator:build(c,data),resolve}))}function pumpBuild(){const end=performance.now()+3;do{if(!buildJob)buildJob=buildQueue.shift();if(!buildJob)return;const result=buildJob.generator.next();if(result.done){buildJob.resolve();buildJob=null}}while(performance.now()<end)}
+ const buildQueue=[];let buildJob=null;function scheduleBuild(c,data){return new Promise(resolve=>buildQueue.push({generator:build(c,data),resolve}))}function pumpBuild(){const end=performance.now()+streamBudget(3);do{if(!buildJob)buildJob=buildQueue.shift();if(!buildJob)return;const result=buildJob.generator.next();if(result.done){buildJob.resolve();buildJob=null}}while(performance.now()<end)}
  let inFlight=0;const loader=new T.TextureLoader();let photoFlight=0,roofSelected=new Set();
  async function load(c){if(c.group)return c;if(c.pending)return c.pending;if(performance.now()<c.retry)return c;c.pending=(async()=>{inFlight++;await Promise.resolve();try{if(!c.data)c.data=await fetch('./'+c.file,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Regional chunk unavailable');return r.json()});await scheduleBuild(c,c.data);return c}catch(e){c.retry=performance.now()+15000;console.warn('Regional scenery will retry',c.id);return c}finally{inFlight--;c.pending=null}})();return c.pending}
  function unloadPhoto(c){if(!c.photo)return;c.roofMesh.material=roofMaterial;c.photo.map.dispose();photoMaterials.splice(photoMaterials.indexOf(c.photo),1);c.photo.dispose();c.photo=null}

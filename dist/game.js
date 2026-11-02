@@ -11,7 +11,7 @@ import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js?v=release-1';
 import {createBusService} from './bus-service.js?v=occlusion-2';
 import {createWaterWorld} from './water-world.js?v=regional-tunnels-101';
-import {loadWorld} from './geoworld.js?v=direction-signs-1';
+import {loadWorld} from './geoworld.js?v=low-end-3';
 import {createSound} from './sound.js?v=radio-ads-2';
 import {createFarCull} from './far-cull.js?v=far-cull-1';
 import {createOcclusion} from './occlusion.js?v=occlusion-3';
@@ -21,10 +21,10 @@ import {createDayNight} from './day-night.js?v=auto-quality-1';
 import {installNightVision} from './night-vision.js';
 import {createDriving} from './driving.js?v=road-recover-89';
 import {createSkidMarks} from './skid-marks.js?v=handbrake-79';
-import {createStreetFurniture} from './street-furniture.js?v=paced-1';
+import {createStreetFurniture} from './street-furniture.js?v=low-end-3';
 import {createPeople} from './people.js?v=occlusion-2';
 import {createIntersectionScenery} from './intersection-scenery.js?v=speed-signs-2';
-import {createDirectionSigns} from './direction-signs.js?v=direction-signs-2';
+import {createDirectionSigns} from './direction-signs.js?v=low-end-3';
 import {createTraffic} from './traffic.js?v=release-1';
 import {movePlayer,findLanding} from './movement.js?v=audio-music-58';
 import {regionalDestinations} from './regional-destinations.js?v=north-east-112';
@@ -33,7 +33,7 @@ import {createBicycle} from './bicycle.js?v=bike-3';
 import {createMotorbike} from './motorbike.js?v=moto-1';
 import {createWeather} from './weather.js?v=shadow-quality-1';
 import {updateDetailRange} from './spatial-split.js?v=paced-1';
-import {createQuality} from './quality.js?v=release-1';
+import {createQuality} from './quality.js?v=low-end-1';
 const $=s=>document.querySelector(s), scene=new T.Scene();scene.background=new T.Color('#92c8e9');
 // The world root never moves. Left on auto it would rebuild its matrix each frame, which forces every one of the
 // thousands of objects under it to recompute its world matrix too.
@@ -85,6 +85,9 @@ function exitMoto(){const m=ridingMoto(),l=m?.exit();if(!l)return false;camera.p
 function toggleMoto(variant){const m=ridingMoto();exitMoto();if(m?.variant!==variant)enterMoto(variant)}
 await globalThis.loadingStage?.('Bus routes');
 const busService=await createBusService(scene,world,traffic,driving,$('#bus-job'));
+// Shader programs otherwise compile one by one inside the first frame, blocking for seconds. compileAsync submits them all
+// at once so the driver builds them in parallel (KHR_parallel_shader_compile) while the loading bar keeps drawing.
+await globalThis.loadingStage?.('Preparing shaders');await renderer.compileAsync(scene,camera);
 $('#play').disabled=false;$('#play').textContent='EXPLORE WAINUIOMATA ↗';
 async function startBusRoute(){interiors.exit();exitTrainRide();active=false;try{await busService.start();aerial=false;$('#travel').value='';play()}catch(e){$('#toast').textContent=e.message;$('#toast').style.opacity=1}}
 $('#bus-start').onclick=startBusRoute;$('#bus-cancel').onclick=()=>busService.cancel();

@@ -1,13 +1,13 @@
 import {setCellSiteClearance} from './cell-site-clearance.js?v=cells-90';
 import * as T from './vendor/three.js';
-import {createPropertyFences} from './fences.js?v=split-cells-1';
+import {createPropertyFences} from './fences.js?v=low-end-1';
 import {applyRoadImagery} from './road-imagery.js?v=intersections-50';
 import {createGroundDetail} from './ground-detail.js?v=regional-ground-65';
 import {applyGroundImagery} from './ground-imagery.js?v=regional-ground-65';
 import {applyNightLight} from './night-lights.js?v=night-walls-73';
-import {createTerrainStream} from './terrain-stream.js?v=release-1';
+import {createTerrainStream} from './terrain-stream.js?v=low-end-2';
 import {makeTextures} from './textures.js?v=large-houses-94';
-import {createHydrology,createRoadNetwork} from './water-roads.js?v=paced-1';
+import {createHydrology,createRoadNetwork} from './water-roads.js?v=low-end-3';
 import {facadeProfile,facadeStyle,FACADE_COUNT} from './appearance.js?v=large-houses-94';
 import {createTunnels} from './tunnels.js?v=perf-59';
 import {addGreenery} from './greenery.js?v=static-1';
@@ -18,16 +18,17 @@ import {splitMeshByCell,weldVertices} from './spatial-split.js?v=paced-1';
 import {createFacadeArray,mergeFacadeBatches} from './facade-array.js?v=paced-1';
 import {createOpenSpaces} from './open-spaces.js';
 import {createStreetIndex,buildingFaces,wallStyle,wallTextureScale} from './building-faces.js?v=large-houses-94';
-import {addCanopies} from './canopies.js';
+import {addCanopies} from './canopies.js?v=low-end-3';
 import {addSideWindows} from './side-windows.js?v=paced-1';
 import {createRoofDetail} from './roof-detail.js?v=smooth-junctions-25';
 import {createCoast} from './coast.js?v=boats-81';
-import {createRegionStream} from './region-stream.js?v=paced-1';
-import {createRailways} from './railways.js?v=release-1';
+import {createRegionStream} from './region-stream.js?v=low-end-3';
+import {createRailways} from './railways.js?v=low-end-3';
 import {assembleRegionalMap} from './regional-map.js?v=regions-1';
 import {unpackTerrain,unpackFar} from './terrain-pack.js?v=runtime-packs-1';
 import {createSurveyGround} from './world-ground.js?v=street-grades-1';
 const fetchAsset=url=>fetch(url,{cache:'no-cache'});
+const loadPhoto=url=>new T.TextureLoader().loadAsync(url);
 const loadRegionalMap=async()=>{const index=await fetchAsset('./regional-map.json').then(r=>r.json());return assembleRegionalMap(index,await Promise.all(index.parts.map(p=>fetchAsset('./'+p.file).then(r=>r.json()))))};
 const read=async(url,type)=>{const r=await fetchAsset(url);if(!r.ok)throw Error(`Could not load ${url}`);return new type(await r.arrayBuffer())};
 export async function loadWorld(scene){
@@ -35,14 +36,17 @@ export async function loadWorld(scene){
  // Street grades are precomputed (scripts/pack_street_grades.mjs); ?solve-grades solves them here instead, and a missing pack falls back to that.
  const streetGradesPack=new URLSearchParams(location.search).has('solve-grades')?Promise.resolve(null):read('./street-grades.pack',Uint8Array).catch(()=>null);
  const regionalTerrainMeta=fetchAsset('./regional-terrain.json').then(r=>r.json()),regionalBuildingMeta=fetchAsset('./regional-buildings.json').then(r=>r.json());
- const [meta,coarse,fine,buildings,roofData,wallData,localMap,roofImagery,localWaterways,outerBuildings,wideImagery,forestMeta,forestData,openSpaceData,roofDetailMeta,regionalMeta,regionalPack,regionalMap,regionalWaterways,coastMeta,regionalForest,regionalBuildings,regionalFarPack,railData]=await Promise.all([fetchAsset('./geodata.json').then(r=>r.json()),read('./terrain.bin',Int32Array),read('./terrain-fine.bin',Int32Array),fetchAsset('./buildings.json').then(r=>r.json()),read('./building-roofs.bin',Float32Array),read('./building-walls.bin',Float32Array),fetchAsset('./map.json').then(r=>r.json()),fetchAsset('./roof-imagery.json').then(r=>r.json()),fetchAsset('./waterways.json').then(r=>r.json()),fetchAsset('./buildings-outer.json').then(r=>r.json()),fetchAsset('./roof-imagery-wide.json').then(r=>r.json()),fetchAsset('./forest-mask.json').then(r=>r.json()),read('./forest-mask.bin',Uint8Array),fetchAsset('./open-spaces.json').then(r=>r.json()),fetchAsset('./roof-detail.json').then(r=>r.json()),regionalTerrainMeta,regionalTerrainMeta.then(m=>read('./'+m.packed.file,Uint8Array)),loadRegionalMap(),fetchAsset('./regional-waterways.json').then(r=>r.json()),fetchAsset('./regional-coast.json').then(r=>r.json()),read('./regional-forest.bin',Uint8Array),regionalBuildingMeta,regionalBuildingMeta.then(m=>read('./'+m.farPack.file,Uint8Array)),fetchAsset('./railways.json').then(r=>r.json())]);
+ // Photographs start downloading with the data instead of one after another once it has all arrived.
+ const roofImageryMeta=fetchAsset('./roof-imagery.json').then(r=>r.json()),wideImageryMeta=fetchAsset('./roof-imagery-wide.json').then(r=>r.json()),aerialPhoto=roofImageryMeta.then(m=>loadPhoto('./'+m.image)),widePhoto=wideImageryMeta.then(m=>loadPhoto('./'+m.image)),facadePhoto=new T.TextureLoader().loadAsync('./assets/facade-photo-atlas-v3.webp'),surfacePhoto=new T.TextureLoader().loadAsync('./assets/building-surfaces-v1.webp');
+ const regionalGroundMeta=fetchAsset('./ground-regional.json').then(r=>r.ok?r.json():null).catch(()=>null),overviewPhotos=regionalGroundMeta.then(g=>g?Promise.all([loadPhoto('./'+g.overview.image),g.overviewOuter?loadPhoto('./'+g.overviewOuter.image):null]):[]);
+ const [meta,coarse,fine,buildings,roofData,wallData,localMap,roofImagery,localWaterways,outerBuildings,wideImagery,forestMeta,forestData,openSpaceData,roofDetailMeta,regionalMeta,regionalPack,regionalMap,regionalWaterways,coastMeta,regionalForest,regionalBuildings,regionalFarPack,railData]=await Promise.all([fetchAsset('./geodata.json').then(r=>r.json()),read('./terrain.bin',Int32Array),read('./terrain-fine.bin',Int32Array),fetchAsset('./buildings.json').then(r=>r.json()),read('./building-roofs.bin',Float32Array),read('./building-walls.bin',Float32Array),fetchAsset('./map.json').then(r=>r.json()),roofImageryMeta,fetchAsset('./waterways.json').then(r=>r.json()),fetchAsset('./buildings-outer.json').then(r=>r.json()),wideImageryMeta,fetchAsset('./forest-mask.json').then(r=>r.json()),read('./forest-mask.bin',Uint8Array),fetchAsset('./open-spaces.json').then(r=>r.json()),fetchAsset('./roof-detail.json').then(r=>r.json()),regionalTerrainMeta,regionalTerrainMeta.then(m=>read('./'+m.packed.file,Uint8Array)),loadRegionalMap(),fetchAsset('./regional-waterways.json').then(r=>r.json()),fetchAsset('./regional-coast.json').then(r=>r.json()),read('./regional-forest.bin',Uint8Array),regionalBuildingMeta,regionalBuildingMeta.then(m=>read('./'+m.farPack.file,Uint8Array)),fetchAsset('./railways.json').then(r=>r.json())]);
  const regionalData=unpackTerrain(regionalPack,regionalMeta.width,regionalMeta.height);
  const {far:regionalFar,roof:regionalRoofFar}=unpackFar(regionalFarPack,regionalBuildings.farPack.count),cellSites=await fetchAsset('./cell-sites.json?v=cells-90').then(r=>r.json());setCellSiteClearance(cellSites.sites);
  const trafficControls=await fetchAsset('./traffic-controls.json').then(r=>r.json());const dogParks=await fetchAsset('./dog-parks.json?v=parks-105').then(r=>r.json());openSpaceData.features.push(...dogParks.features);
  const map={...regionalMap,controls:trafficControls.nodes,seaLevel:-meta.originElevation,elements:[...new Map([...localMap.elements,...regionalMap.elements].map(r=>[r.id,r])).values()]},waterways=[...new Map([...localWaterways,...regionalWaterways].map(r=>[r.id,r])).values()];
- const aerialTexture=await new T.TextureLoader().loadAsync('./'+roofImagery.image);aerialTexture.colorSpace=T.SRGBColorSpace;aerialTexture.magFilter=T.LinearFilter;aerialTexture.minFilter=T.LinearMipmapLinearFilter;aerialTexture.anisotropy=4;
- const wideTexture=await new T.TextureLoader().loadAsync('./'+wideImagery.image);wideTexture.colorSpace=T.SRGBColorSpace;wideTexture.magFilter=T.LinearFilter;wideTexture.minFilter=T.LinearMipmapLinearFilter;wideTexture.anisotropy=4;
- const [facadeAtlas,foliage,surfaceAtlas]=await Promise.all([new T.TextureLoader().loadAsync('./assets/facade-photo-atlas-v3.webp'),createFoliage(),new T.TextureLoader().loadAsync('./assets/building-surfaces-v1.webp')]);
+ const aerialTexture=await aerialPhoto;aerialTexture.colorSpace=T.SRGBColorSpace;aerialTexture.magFilter=T.LinearFilter;aerialTexture.minFilter=T.LinearMipmapLinearFilter;aerialTexture.anisotropy=4;
+ const wideTexture=await widePhoto;wideTexture.colorSpace=T.SRGBColorSpace;wideTexture.magFilter=T.LinearFilter;wideTexture.minFilter=T.LinearMipmapLinearFilter;wideTexture.anisotropy=4;
+ const [facadeAtlas,foliage,surfaceAtlas]=await Promise.all([facadePhoto,createFoliage(),surfacePhoto]);
  const datum=meta.originElevation,textures=makeTextures(facadeAtlas.image,surfaceAtlas.image),windowMaterials=[],photoMaterials=[],woodlandDensity=forestSampler(forestMeta,forestData),openSpaces=createOpenSpaces(openSpaceData),forestDensity=(x,z)=>{if(openSpaces.at(x,z)||!coast.isLand(x,z))return 0;const w=T.MathUtils.clamp(Math.min(3450-Math.abs(x),3450-Math.abs(z))/150,0,1);return woodlandDensity(x,z)*w+coast.density(x,z)*(1-w)},forestFloorTint=new T.Color('#526b4f');facadeAtlas.dispose();surfaceAtlas.dispose();
  let railways=null;
  const streets=createStreetIndex(map),roofDetail=createRoofDetail(scene,roofDetailMeta,photoMaterials);
@@ -54,8 +58,8 @@ export async function loadWorld(scene){
  await globalThis.loadingStage?.('Rivers and streams');
  const hydro=createHydrology(scene,waterways,rawGround,{seaLevel:coast.seaLevel}),tunnels=createTunnels(scene,map,rawGround);
  // Regional photographs: a whole-region overview, then streamed 2m valley and 0.5m urban tiles (see prepare_regional_ground.py).
- const regionalGround=await fetchAsset('./ground-regional.json').then(r=>r.ok?r.json():null).catch(()=>null);let overviewLayer=[];
- if(regionalGround){const o=regionalGround.overview,texture=await new T.TextureLoader().loadAsync('./'+o.image);texture.colorSpace=T.SRGBColorSpace;texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.anisotropy=4;overviewLayer=[{texture,bounds:o,fade:20,blank:true,detail:.35}];const e=regionalGround.overviewOuter;if(e){const outer=await new T.TextureLoader().loadAsync('./'+e.image);outer.colorSpace=T.SRGBColorSpace;outer.minFilter=T.LinearMipmapLinearFilter;outer.anisotropy=4;overviewLayer.unshift({texture:outer,bounds:e,fade:150,blank:true,detail:.45})}}
+ const regionalGround=await regionalGroundMeta;let overviewLayer=[];
+ if(regionalGround){const o=regionalGround.overview,texture=(await overviewPhotos)[0];texture.colorSpace=T.SRGBColorSpace;texture.magFilter=T.LinearFilter;texture.minFilter=T.LinearMipmapLinearFilter;texture.anisotropy=4;overviewLayer=[{texture,bounds:o,fade:20,blank:true,detail:.35}];const e=regionalGround.overviewOuter;if(e){const outer=(await overviewPhotos)[1];outer.colorSpace=T.SRGBColorSpace;outer.minFilter=T.LinearMipmapLinearFilter;outer.anisotropy=4;overviewLayer.unshift({texture:outer,bounds:e,fade:150,blank:true,detail:.45})}}
  const groundDetail=createGroundDetail(await fetchAsset('./ground-detail.json').then(r=>r.json()),regionalGround);
  const aerialLayers=[...overviewLayer,{texture:wideTexture,bounds:wideImagery,fade:80},...groundDetail.valleyLayers,{texture:aerialTexture,bounds:roofImagery,fade:50},...groundDetail.layers];
  await globalThis.loadingStage?.('Roads, bridges and tunnels');

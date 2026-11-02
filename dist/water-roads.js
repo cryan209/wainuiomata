@@ -1,7 +1,7 @@
 import * as T from './vendor/three.js';
 import {weldSteps,releaseAfterUpload} from './spatial-split.js?v=paced-1';
 import {railTerrainGround,planRailSubways,subwayFloorAt} from './rail-clearance.js?v=rail-stations-103';
-import {namedRoadTunnels} from './tunnel-scenery.js?v=regional-tunnels-101';
+import {namedRoadTunnels} from './tunnel-scenery.js?v=low-end-2';
 import {buildJunctions,solveRoadGrades,approachLimit} from './road-grades.js?v=street-grades-1';
 import {convexFootprint,subtractFootprint,triangulateFragments,insideFootprint} from './road-clipping.js?v=smooth-junctions-25';
 import {roadWidth,roadLanes,laneWidth,isOneway,inheritLanes,roadIndex,associatePaths,projectSegment,planOverbridges,underpassHeight,planUnderpasses,clearanceHeight,offsetRoadPoint,associateBridgeDecks} from './road-topology.js?v=regional-tunnels-101';
@@ -88,7 +88,10 @@ export function createRoadNetwork(scene,map,hydro,rawGround,textures,materialHoo
  // ungraded: a trail's surveyed profile before grading (what trail grading itself samples); streets are always graded.
  function height(r,i,t,x,z,ungraded=false){const host=r.sharedSegments.get(i);if(host){const p=projection(host,x,z);return height(host,p.i,p.t,x,z,ungraded)}if(!ungraded&&r.lazyGrade)r.lazyGrade();const graded=ungraded&&trailTypes.has(r.type)?null:r.gradeProfiles?.[i];if(graded){const u=clamp(t,0,1)*(graded.length-1),j=Math.min(graded.length-2,Math.floor(u));return T.MathUtils.lerp(graded[j],graded[j+1],u-j)}if(r.bridge){if(r.deckHeights)return T.MathUtils.lerp(r.deckHeights[i],r.deckHeights[i+1],t);let h=T.MathUtils.lerp(r.deckStart,r.deckEnd,(r.cumulative[i]+r.p[i].distanceTo(r.p[i+1])*t)/r.length);for(const other of r.parallelDecks){const p=projection(other,x,z);if(p.d<(r.pavementWidth+other.pavementWidth)/2+2)h=Math.max(h,T.MathUtils.lerp(other.deckStart,other.deckEnd,(other.cumulative[p.i]+other.p[p.i].distanceTo(other.p[p.i+1])*p.t)/other.length))}return h;}if(!r.profiles)buildProfiles(r);const values=r.profiles[i],u=clamp(t,0,1)*(values.length-1),j=Math.min(values.length-2,Math.floor(u));return T.MathUtils.lerp(values[j],values[j+1],u-j)}
  function hits(x,z){return(spatial.get(Math.floor(x/50)+','+Math.floor(z/50))||[]).map(({r,i})=>projectSegment(r,i,x,z))}
- function at(x,z,onlyBridge=false,groundOnly=false){let best=null;for(const hit of hits(x,z)){const{r,i}=hit;if(r.sharedSegments.has(i))continue;if((onlyBridge&&!r.bridge)||(groundOnly&&(r.bridge||r.sharedSegments.has(i))))continue;const motor=!['footway','path','cycleway','steps','pedestrian','bridleway'].includes(r.type),rank=hit.d-(motor&&hit.d<r.width/2+.1?100:0);if(!best||rank<best.rank)best={...hit,rank}}return best}
+ // Ground and placement queries call at() millions of times while loading: segments it would skip are not projected, and only
+ // the winning hit is copied.
+ const walkwayTypes=new Set(['footway','path','cycleway','steps','pedestrian','bridleway']);
+ function at(x,z,onlyBridge=false,groundOnly=false){let best=null,bestRank=Infinity;for(const{r,i}of spatial.get(Math.floor(x/50)+','+Math.floor(z/50))||[]){if(r.sharedSegments.has(i)||onlyBridge&&!r.bridge||groundOnly&&r.bridge)continue;const hit=projectSegment(r,i,x,z),rank=hit.d-(!walkwayTypes.has(r.type)&&hit.d<r.width/2+.1?100:0);if(rank<bestRank){best=hit;bestRank=rank}}return best&&{...best,rank:bestRank}}
  function surface(x,z,y){let best=null,score=Infinity;for(const hub of junctionHits(x,z)){const s=y===undefined?0:Math.abs(hub.height-(y-2));if(s<score){best={r:hub.legs[0].r,y:hub.height,d:0,junction:hub};score=s}}for(const hit of hits(x,z)){const{r,i,t,d}=hit;if(r.sharedSegments.has(i)||(r.tunnel&&y===undefined))continue;if(d>(r.pavementWidth||r.width+2)/2+.1)continue;const h=height(r,i,t,x,z),s=y===undefined?d:Math.abs(h-(y-2))+.02*d;if(s<score-1e-5||(Math.abs(s-score)<1e-5&&h>best?.y)){best={...hit,y:h};score=s}}const base=hydro.ground(x,z);if(y!==undefined&&(best?.junction?.bridge||best?.r.bridge)&&Math.abs(base-(y-2))+.1<score)return null;return best}
  const roadChunks=new Map();let nextRoadUpdate=0;
  let pumpGeometry=()=>{};if(buildGeometry){

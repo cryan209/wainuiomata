@@ -61,7 +61,13 @@ export function createTunnelScenery(scene,definitions){
   for(const [key,c]of loaded)if(Math.hypot(c.x-camera.x,c.z-camera.z)>2100){scene.remove(c.group);c.group.traverse(o=>o.geometry?.dispose());loaded.delete(key);}
   const c=[...chunks.values()].filter(c=>!loaded.has(c.key)&&Math.hypot(c.x-camera.x,c.z-camera.z)<1600).sort((a,b)=>Math.hypot(a.x-camera.x,a.z-camera.z)-Math.hypot(b.x-camera.x,b.z-camera.z))[0];if(c)build(c);
  }
- return{definitions,portals,at,canMove,applyTerrain,update,clearPortal(x,z){return portals.some(p=>Math.hypot(x-p.p.x,z-p.p.z)<p.d.half+12);},get stats(){return{tunnels:definitions.length,chunks:loaded.size};}};
+ // Every tree, pole and sign candidate asks clearPortal, so portals are bucketed (once all are known) instead of scanned.
+ let portalCells=null,portalReach=0;
+ function portalsNear(x,z){
+  if(!portalCells){portalCells=new Map();for(const p of portals){portalReach=Math.max(portalReach,p.d.half+12);const key=Math.floor(p.p.x/100)+','+Math.floor(p.p.z/100);if(!portalCells.has(key))portalCells.set(key,[]);portalCells.get(key).push(p);}}
+  const out=[];for(let ix=Math.floor((x-portalReach)/100);ix<=Math.floor((x+portalReach)/100);ix++)for(let iz=Math.floor((z-portalReach)/100);iz<=Math.floor((z+portalReach)/100);iz++)for(const p of portalCells.get(ix+','+iz)||[])out.push(p);return out;
+ }
+ return{definitions,portals,at,canMove,applyTerrain,update,clearPortal(x,z){return portalsNear(x,z).some(p=>Math.hypot(x-p.p.x,z-p.p.z)<p.d.half+12);},get stats(){return{tunnels:definitions.length,chunks:loaded.size};}};
 }
 
 export function namedRoadTunnels(scene,network){return createTunnelScenery(scene,network.roads.filter(r=>r.tunnel&&r.name&&!r.fullyShared&&r.length>40).map(r=>({id:r.id,name:r.name,rail:false,half:Math.max(.4,r.pavementWidth/2-.1),height:r.headroom-.16,ground:network.ground,points:r.p.map((p,i)=>({x:p.x,z:p.y,y:network.height(r,Math.min(i,r.p.length-2),i===r.p.length-1?1:0,p.x,p.y)}))})));}

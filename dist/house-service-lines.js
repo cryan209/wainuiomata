@@ -1,4 +1,5 @@
 import * as T from './vendor/three.js';
+import {streamBudget} from './frame-budget.js?v=1';
 import {finishSteps} from './spatial-split.js?v=paced-1';
 export const MAX_HOUSE_SERVICE_DISTANCE=8;
 const clamp=t=>Math.max(0,Math.min(1,t));
@@ -46,7 +47,7 @@ export function* planHouseServiceSteps(buildings,feeders,world){
 export function serviceLinePositions(drops){const positions=[];for(const drop of drops)for(const offset of [-.035,.035])for(let i=1;i<drop.points.length;i++){const a=drop.points[i-1],b=drop.points[i];positions.push(a[0],a[1]+offset,a[2],b[0],b[1]+offset,b[2])}return positions}
 export function createHouseServiceLines(scene,world,{material,getFeeders}){
  let mesh=null,next=0,lastSignature='',lastX=Infinity,lastZ=Infinity,drops=[],job=null;
- function pump(){const end=performance.now()+2;let r;while(!(r=job.next()).done)if(performance.now()>=end)return;job=null;show(r.value)}
+ function pump(){const end=performance.now()+streamBudget(2);let r;while(!(r=job.next()).done)if(performance.now()>=end)return;job=null;show(r.value)}
  function show(result){drops=result;const positions=serviceLinePositions(drops);
   if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh=null}if(positions.length){const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.computeBoundingSphere();mesh=new T.LineSegments(geometry,material);mesh.name='House overhead service drops';mesh.userData.houseServiceLines=true;scene.add(mesh)}}
  const local=world.buildings||[];const localCells=buildingIndex(local);

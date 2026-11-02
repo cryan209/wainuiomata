@@ -1,22 +1,25 @@
 import {setDetailRange} from './spatial-split.js?v=paced-1';
+import {setStreamBudgetScale} from './frame-budget.js?v=1';
 // Graphics tiers, lowest first. scale: render resolution; far: view distance in metres (fog follows it);
 // vegetation: multiplier on forest, town tree and fence distances; terrain: [distance-band multiplier, nearest ground step in metres];
-// detailRange: metres beyond which small facade details (joinery, side windows) are hidden; shadowLevel: the shadow quality Auto picks. Shadows re-render every caster several times a second,
+// detailRange: metres beyond which small facade details (joinery, side windows) are hidden; stream: multiplier on the
+// milliseconds per frame that scenery builders may spend; shadowLevel: the shadow quality Auto picks. Shadows re-render every caster several times a second,
 // so they are the first thing a weak GPU loses.
 export const TIERS=[
- {id:'low',label:'Low · 50% resolution, no shadows, 2 km view',scale:.5,shadows:false,far:2000,vegetation:.45,terrain:[.3,5],detailRange:400},
- {id:'reduced',label:'Reduced · 65% resolution, no shadows, 6 km view',scale:.65,shadows:false,far:6000,vegetation:.65,terrain:[.75,2],detailRange:900},
- {id:'balanced',shadowLevel:'low',label:'Balanced · 75% resolution, 12 km view',scale:.75,shadows:true,far:12000,vegetation:.85,terrain:[1,2],detailRange:Infinity},
- {id:'quality',shadowLevel:'medium',label:'Quality · native resolution, full view',scale:1,shadows:true,far:30000,vegetation:1,terrain:[1,2],detailRange:Infinity},
+ {id:'low',label:'Low · 50% resolution, no shadows, 2 km view',scale:.5,shadows:false,far:2000,vegetation:.45,terrain:[.3,5],detailRange:400,stream:.4},
+ {id:'reduced',label:'Reduced · 65% resolution, no shadows, 6 km view',scale:.65,shadows:false,far:6000,vegetation:.65,terrain:[.75,2],detailRange:900,stream:.6},
+ {id:'balanced',shadowLevel:'low',label:'Balanced · 75% resolution, 12 km view',scale:.75,shadows:true,far:12000,vegetation:.85,terrain:[1,2],detailRange:Infinity,stream:.85},
+ {id:'quality',shadowLevel:'medium',label:'Quality · native resolution, full view',scale:1,shadows:true,far:30000,vegetation:1,terrain:[1,2],detailRange:Infinity,stream:1},
 ];
 const CHOICE_KEY='wainui-graphics',AUTO_KEY='wainui-graphics-auto',SHADOW_KEY='wainui-shadow-quality';
 const load=key=>{try{return localStorage.getItem(key)}catch{return null}},save=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
 
-// A first guess before any frames are measured: software rasterisers and common integrated/mobile GPUs start low.
+// A first guess before any frames are measured: software rasterisers and very small machines start on Low; common
+// integrated/mobile GPUs (including Iris and the unnumbered Radeon/Vega APU graphics) start on Reduced.
 function guessTier(renderer){
  let gpu='';try{const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):''}catch{}
- if(/swiftshader|llvmpipe|softpipe|software|basic render/i.test(gpu))return 0;
- if(/mali|adreno|powervr|videocore|intel.*(hd|uhd) graphics/i.test(gpu)||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)return 1;
+ if(/swiftshader|llvmpipe|softpipe|software|basic render/i.test(gpu)||(navigator.hardwareConcurrency||8)<=2||(navigator.deviceMemory||8)<=2)return 0;
+ if(/mali|adreno|powervr|videocore|intel.*((hd|uhd) graphics|iris)|intel\(r\) graphics|radeon(\(tm\))? (graphics|vega)/i.test(gpu)||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)return 1;
  return 2;
 }
 
@@ -29,7 +32,7 @@ export function createQuality({renderer,camera,sky,vegetation=[],terrain,setScal
  function apply(){
   const t=TIERS[tier];setScale(t.scale);camera.far=t.far;camera.updateProjectionMatrix();
   // The sky dome is 10 km across; shrink it inside the far plane so it is never clipped.
-  sky.scale.setScalar(Math.min(1,t.far*.9/10000));for(const v of vegetation)v?.setDetail?.(t.vegetation);terrain?.setDetail?.(...t.terrain);setDetailRange(t.detailRange);setShadowQuality?.(shadowChoice==='auto'?t.shadowLevel||'low':shadowChoice);
+  sky.scale.setScalar(Math.min(1,t.far*.9/10000));for(const v of vegetation)v?.setDetail?.(t.vegetation);terrain?.setDetail?.(...t.terrain,Math.min(5000,t.far+400));setStreamBudgetScale(t.stream);setDetailRange(t.detailRange);setShadowQuality?.(shadowChoice==='auto'?t.shadowLevel||'low':shadowChoice);
   if(shadowToggle){
    if(!t.shadows&&shadowToggle.checked){shadowToggle.checked=false;shadowsOffByUs=true;shadowToggle.dispatchEvent(new Event('change'))}
    else if(t.shadows&&shadowsOffByUs&&!shadowToggle.checked){shadowToggle.checked=true;shadowsOffByUs=false;shadowToggle.dispatchEvent(new Event('change'))}
