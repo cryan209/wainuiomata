@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {planLargeHouseOpenings} from './large-house-facades.js?v=large-houses-94';
+import {planLargeHouseOpenings} from './large-house-facades.js?v=release-1';
 export const houseStyles=[['house-family','Rimu House'],['house-bungalow','Kōwhai House'],['house-retro','Tawa House']];
 export function selectHouseEntrances(world,origin,limit=6,{exclude=new Set(),maxDistance=Infinity,avoid=[]}={}){
  if(limit<=0)return [];

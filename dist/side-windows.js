@@ -1,8 +1,12 @@
-import {addLargeHouseFacades} from './large-house-facades.js?v=large-houses-94';
+import {addLargeHouseFacades} from './large-house-facades.js?v=release-1';
 import * as T from './vendor/three.js';
 import {hash} from './appearance.js?v=large-houses-94';
-export function addSideWindows(scene,buildings,{ground,datum,textures,windowMaterials}){
- const large=addLargeHouseFacades(scene,buildings,{ground,datum,textures,windowMaterials});
+import {mergeFacadeBatchSteps} from './facade-array.js?v=paced-1';
+import {splitMeshByCell,smallDetail,finishSteps} from './spatial-split.js?v=paced-1';
+export function addSideWindows(scene,buildings,options){return finishSteps(addSideWindowSteps(scene,buildings,options))}
+// The same, a building per step for paced builders (`yield*` it).
+export function* addSideWindowSteps(scene,buildings,{ground,datum,textures,windowMaterials}){
+ const large=addLargeHouseFacades(scene,buildings,{ground,datum,textures,windowMaterials});yield;
  const batches=Array.from({length:8},()=>({p:[],uv:[]}));let count=0;
  for(const b of buildings){if(!b.profile||!b.faces||b.profile.largeHouse&&!b.profile.shop&&!b.profile.industrial)continue;const base=b.ground-datum,height=b.eave-b.ground,style=b.profile.shop?5:b.profile.style%8;
   for(const f of b.faces){if(f.front||f.length<3)continue;const bays=Math.max(1,Math.round(f.length/5.5)),dx=(f.b[0]-f.a[0])/f.length,dz=(f.b[1]-f.a[1])/f.length;
@@ -12,7 +16,9 @@ export function addSideWindows(scene,buildings,{ground,datum,textures,windowMate
     for(const i of [0,1,2,0,2,3]){batch.p.push(...points[i]);batch.uv.push(...[[0,1],[1,1],[1,0],[0,0]][i])}count++;
    }
   }
+  yield;
  }
- for(let i=0;i<8;i++){const b=batches[i];if(!b.p.length)continue;const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(b.p,3));g.setAttribute('uv',new T.Float32BufferAttribute(b.uv,2));g.computeVertexNormals();const material=new T.MeshLambertMaterial({map:textures.sideWindows[i],color:'#d1d3d0',emissive:'#ffd7ab',emissiveMap:textures.sideWindowMasks[i],emissiveIntensity:0,side:T.DoubleSide});material.userData.nightBrightness=.85;windowMaterials.push(material);scene.add(new T.Mesh(g,material))}
+ // All eight styles share textures.sideDetails (already in windowMaterials) and split by area as small details.
+ const g=yield* mergeFacadeBatchSteps(batches);if(g)for(const part of smallDetail(splitMeshByCell(new T.Mesh(g,textures.sideDetails.material()),600)))scene.add(part);
  return{count:count+large.count};
 }

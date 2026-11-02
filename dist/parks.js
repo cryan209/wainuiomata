@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {createHumanRenderer} from './people.js?v=textured-peds-76';
+import {createHumanRenderer} from './people.js?v=occlusion-2';
 // Park furniture, play equipment, pitch markings, dog-park fencing and the dogs themselves are
 // illustrative and placed procedurally inside mapped open-space outlines; they are not a survey of council assets.
 const FURNISHED=new Set(['park','playground','pitch','recreation_ground','dog_park']);

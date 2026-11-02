@@ -1,13 +1,27 @@
 import * as T from './vendor/three.js';
-import {createPines} from './pine-trees.js?v=pine-lod-100';
+import {createPines} from './pine-trees.js?v=static-1';
 import {vegetationClear} from './river-clearance.js?v=cells-90';
+const CELL=512;
+// Copies an InstancedMesh's instances into one mesh per CELL-sized square, sharing geometry buffers and material.
+// Per-instance attributes are sliced; zero-scale placeholders are dropped. The original mesh leaves the scene.
+function splitByCell(scene,mesh){
+ const groups=new Map(),m=new T.Matrix4(),c=new T.Color(),parts=[];
+ for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,m);const e=m.elements;if(!e[0]&&!e[1]&&!e[2])continue;const key=Math.floor(e[12]/CELL)+','+Math.floor(e[14]/CELL);if(!groups.has(key))groups.set(key,{ids:[],x:e[12],z:e[14]});groups.get(key).ids.push(i)}
+ for(const {ids,x,z}of groups.values()){
+  const source=mesh.geometry,geo=new T.BufferGeometry();geo.setIndex(source.index);geo.setDrawRange(source.drawRange.start,source.drawRange.count);
+  for(const [name,attr]of Object.entries(source.attributes)){if(!attr.isInstancedBufferAttribute){geo.setAttribute(name,attr);continue}const n=attr.itemSize,a=new attr.array.constructor(ids.length*n);ids.forEach((id,j)=>a.set(attr.array.subarray(id*n,id*n+n),j*n));geo.setAttribute(name,new T.InstancedBufferAttribute(a,n,attr.normalized,attr.meshPerAttribute))}
+  const part=new T.InstancedMesh(geo,mesh.material,ids.length);part.customDepthMaterial=mesh.customDepthMaterial;part.onBeforeRender=mesh.onBeforeRender;part.renderOrder=mesh.renderOrder;part.matrixAutoUpdate=false;
+  ids.forEach((id,j)=>{mesh.getMatrixAt(id,m);part.setMatrixAt(j,m);if(mesh.instanceColor){mesh.getColorAt(id,c);part.setColorAt(j,c)}});part.computeBoundingSphere();scene.add(part);parts.push({mesh:part,x,z});
+ }
+ scene.remove(mesh);mesh.dispose();return parts;
+}
 export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,tunnels,foliage,openSpaces,coast,railways}){
  let seed=1948;const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};const color=new T.Color(),dummy=new T.Object3D(),up=new T.Vector3(0,1,0);
  const leaves=['#c4d1b9','#ced8bd','#d6dcbf','#b9cbb9','#d9ddc5','#cbd8c1'];
  function batch(geometry,base,count){const m=new T.InstancedMesh(geometry,new T.MeshLambertMaterial({color:base,flatShading:true,side:T.DoubleSide}),count);scene.add(m);return m}
- const treeCount=6000,shrubCount=7000,flaxCount=1800,trunks=batch(new T.CylinderGeometry(.18,.4,1,5),'#796a5c',treeCount),crowns=foliage.mesh(treeCount*2),conifers=createPines(treeCount),shrubs=foliage.mesh(shrubCount,2),flaxGeo=new T.BufferGeometry(),blades=[];
+ const treeCount=6000,shrubCount=7000,flaxCount=1800,trunks=batch(new T.CylinderGeometry(.18,.4,1,5),'#796a5c',treeCount),crowns=foliage.mesh(treeCount*2),conifers={matrices:[],setMatrixAt(i,m){this.matrices.push(m.clone())}},shrubs=foliage.mesh(shrubCount,2),flaxGeo=new T.BufferGeometry(),blades=[];
  for(let i=0;i<7;i++){const a=i/7*Math.PI*2,ux=Math.cos(a),uz=Math.sin(a),nx=-uz*.12,nz=ux*.12;blades.push(nx,0,nz,-nx,0,-nz,ux*.9,1.7,uz*.9,ux*.9,1.7,uz*.9,-nx,0,-nz,ux*.5,.5,uz*.5)}flaxGeo.setAttribute('position',new T.Float32BufferAttribute(blades,3));flaxGeo.computeVertexNormals();const flax=batch(flaxGeo,'#ffffff',flaxCount),cabbage=batch(flaxGeo,'#ffffff',treeCount);
- for(const m of [crowns,conifers,shrubs])scene.add(m);
+ for(const m of [crowns,shrubs])scene.add(m);
  const shadow=new T.InstancedMesh(new T.CircleGeometry(1,8),new T.MeshBasicMaterial({color:'#0c3024',transparent:true,opacity:.13,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}),treeCount);scene.add(shadow);
  let nt=0,nc=0,np=0,ns=0,nf=0,nk=0;
  function valid(x,z,clearance,roadMargin=2){if(!railways.clear(x,z,clearance)||!coast.isLand(x,z)||!openSpaces.allows(x,z,clearance))return false;if(Math.abs(x)>3150||Math.abs(z)>3150||tunnels?.clearPortal(x,z))return false;const r=network.at(x,z);if(r&&r.d<r.r.width/2+roadMargin+clearance)return false;if(!vegetationClear(hydro,x,z,clearance))return false;for(const[dx,dz]of [[0,0],[clearance,0],[-clearance,0],[0,clearance],[0,-clearance]])if(!freeBuildings(x+dx,z+dz))return false;return true}
@@ -24,5 +38,13 @@ export function addGreenery(scene,{ground,rawGround,network,hydro,freeBuildings,
  // Native-looking riverside planting leaves water and bridge approaches clear.
  for(const river of hydro.rivers)for(let i=1;i<river.p.length;i++){const a=river.p[i-1],b=river.p[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);for(let d=3;d<len;d+=7){const t=d/len,side=rand()>.5?1:-1,offset=river.width/2+3+rand()*7,x=a.x+dx*t+dz/len*offset*side,z=a.z+dz*t-dx/len*offset*side;bush(x,z,.6+rand()*1.2);if(nf<flaxCount&&valid(x+1.8,z,.5,1)){matrix(flax,nf,x+1.8,ground(x+1.8,z),z,.7+rand()*.6,.7+rand()*.6,.7+rand()*.6,rand()*6);flax.setColorAt(nf++,color.set('#809568'))}}}
  for(let attempts=0;attempts<30000&&ns<shrubCount;attempts++){const x=(rand()-.5)*6200,z=(rand()-.5)*6200;bush(x,z,.55+rand()*1.2);if(nf<flaxCount&&rand()<.2&&valid(x+2,z,.5,1)){matrix(flax,nf,x+2,ground(x+2,z),z,1,.8+rand()*.5,1,rand()*6);flax.setColorAt(nf++,color.set('#718e5b'))}}
- trunks.count=shadow.count=nt;crowns.count=nc;cabbage.count=nk;shrubs.count=ns;flax.count=nf;conifers.computeBoundingSphere();for(const m of [trunks,crowns,cabbage,shrubs,flax,shadow]){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}return{trees:nt,shrubs:ns,flax:nf};
+ trunks.count=shadow.count=nt;crowns.count=nc;cabbage.count=nk;shrubs.count=ns;flax.count=nf;
+ // Map-wide batches become 512m cells so each can be frustum culled, thinned and hidden by distance like the hillside forest.
+ const cells=new Map(),cellOf=(x,z)=>{const key=Math.floor(x/CELL)+','+Math.floor(z/CELL);if(!cells.has(key))cells.set(key,{x:(Math.floor(x/CELL)+.5)*CELL,z:(Math.floor(z/CELL)+.5)*CELL});return cells.get(key)};
+ for(const [name,mesh]of Object.entries({trunks,crowns,cabbage,shrubs,flax,shadow}))for(const part of splitByCell(scene,mesh))cellOf(part.x,part.z)[name]=part.mesh;
+ const pineCells=new Map();for(const m of conifers.matrices){const cell=cellOf(m.elements[12],m.elements[14]);(pineCells.get(cell)||pineCells.set(cell,[]).get(cell)).push(m)}
+ for(const [cell,matrices]of pineCells){const pines=createPines(matrices.length);matrices.forEach((m,i)=>pines.setMatrixAt(i,m));pines.computeBoundingSphere();scene.add(pines);cell.pines=pines}
+ let nextUpdate=0,detail=1;
+ function update(camera){const now=performance.now();if(now<nextUpdate)return;nextUpdate=now+200;const low=camera.y-ground(camera.x,camera.z)<140;for(const c of cells.values()){const d=Math.hypot(Math.max(0,Math.abs(camera.x-c.x)-CELL/2),Math.max(0,Math.abs(camera.z-c.z)-CELL/2))/detail;if(c.pines){c.pines.visible=d<2400;c.pines.setDetail(d<900*detail)}if(c.crowns){c.crowns.visible=d<2400;c.crowns.geometry.setDrawRange(0,d<700?30:d<1500?12:6)}if(c.trunks)c.trunks.visible=d<(low?900:650);if(c.shadow)c.shadow.visible=d<650;if(c.shrubs)c.shrubs.visible=d<(low?700:450);if(c.cabbage)c.cabbage.visible=d<1200;if(c.flax)c.flax.visible=low&&d<450}}
+ return{trees:nt,shrubs:ns,flax:nf,cells:cells.size,update,setDetail(k){detail=k;nextUpdate=0}};
 }

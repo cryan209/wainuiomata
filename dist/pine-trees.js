@@ -103,7 +103,9 @@ const scaled=new T.Matrix4(),stretch=new T.Matrix4(),tint=new T.Color();
 class PineSet extends T.Group{
  constructor(count){
   super();materials();this.name='Radiata pines';this.slots=new Map();
-  this.meshes=SHAPES.map((_,v)=>{const shared=pineGeometry(v),geo=new T.BufferGeometry();for(const name in shared.attributes)geo.setAttribute(name,shared.attributes[name]);geo.boundingSphere=shared.boundingSphere;const mesh=new T.InstancedMesh(geo,material,count);mesh.count=0;mesh.customDepthMaterial=depth;mesh.name=this.name;this.add(mesh);return mesh});
+  // Instances carry the placement; the group and its meshes stay at the origin, so skip their per-frame matrix rebuild.
+  this.matrixAutoUpdate=false;
+  this.meshes=SHAPES.map((_,v)=>{const shared=pineGeometry(v),geo=new T.BufferGeometry();for(const name in shared.attributes)geo.setAttribute(name,shared.attributes[name]);geo.boundingSphere=shared.boundingSphere;const mesh=new T.InstancedMesh(geo,material,count);mesh.count=0;mesh.matrixAutoUpdate=false;mesh.customDepthMaterial=depth;mesh.name=this.name;this.add(mesh);return mesh});
   this.meshes[0].onBeforeRender=()=>{time.value=performance.now()*.001};
  }
  setMatrixAt(i,matrix){

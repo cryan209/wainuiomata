@@ -36,7 +36,7 @@ assert.equal(furniture.free(solid.x,solid.z),false,'Cabinet collisions apply bef
 cornerBlock=solid;assert.equal(furniture.free(solid.x,solid.z),true,'A later corner obstruction suppresses cabinet collisions too');cornerBlock=null;
 assert.equal(furniture.free(cover.x,cover.z),true,'Flat covers are passable');
 assert.equal(furniture.parkingClear({x:solid.x,z:solid.z,dx:0,dz:1},{width:1.8,length:4.8}),false,'Parked cars clear cabinets');
-furniture.update({x:solid.x,y:2,z:solid.z});
+furniture.update({x:solid.x,y:2,z:solid.z});while(furniture.stats.building)furniture.update({x:solid.x,y:2,z:solid.z});
 assert.ok(furniture.stats.utilities>0,'Nearby utilities load');
 const groups=scene.children.filter(o=>o.name.startsWith('Street furniture'));
 assert.ok(groups.length);

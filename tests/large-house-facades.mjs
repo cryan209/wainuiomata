@@ -21,9 +21,9 @@ assert.equal(planLargeHouseOpenings(house(2.7),options).filter(o=>o.kind==='door
 assert.deepEqual(planLargeHouseOpenings(b,options),openings,'Layout is stable');
 for(const patch of [{landmark:true},{railCanopy:true},{tags:{building:'church'}},{facade:'plain'},{eave:15}]){const x={...b,...patch};x.profile=facadeProfile(x);assert.equal(x.profile.largeHouse,false)}
 const shop={...b,profile:{...b.profile,shop:true}};assert.equal(planLargeHouseOpenings(shop,options).length,0);
-const scene=new T.Scene(),windowMaterials=[],textures={houseWindows:Array(8).fill(null),houseWindowMasks:Array(8).fill(null),houseDoors:Array(8).fill(null)};
+const scene=new T.Scene(),windowMaterials=[],textures={houseDetails:{material:()=>new T.MeshLambertMaterial()}};
 const rendered=addLargeHouseFacades(scene,[b,house()],{...options,textures,windowMaterials});assert.equal(rendered.count,openings.length*2);
-assert.equal(scene.children.length,3,'Two houses share one window, door and trim batch per style');
-assert.equal(windowMaterials.length,1,'Only the glass batch participates in night lighting');
+assert.equal(new Set(scene.children.map(m=>m.material)).size,2,'Two houses share one joinery material and one trim material');
+assert.equal(windowMaterials.length,0,'Night lighting comes from the shared joinery material, registered once by the world');
 scene.traverse(o=>{if(o.geometry)assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite))});
 console.log('PASS: continuous large-house cladding, metre-scale windows, one street-facing entrance, storey/corner clearance, no overlapping openings, exclusions, stable layout, shared batches and glass-only night lighting.');

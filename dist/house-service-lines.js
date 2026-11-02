@@ -1,4 +1,5 @@
 import * as T from './vendor/three.js';
+import {finishSteps} from './spatial-split.js?v=paced-1';
 export const MAX_HOUSE_SERVICE_DISTANCE=8;
 const clamp=t=>Math.max(0,Math.min(1,t));
 function inside(ring,x,z){let hit=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])hit=!hit}return hit}
@@ -18,7 +19,9 @@ function closestSegments(a,b,c,d){
 }
 function buildingIndex(buildings){const cells=new Map();for(const b of buildings){const ring=b.rings?.[0];if(!ring)continue;const box=b.bounds||[Math.min(...ring.map(p=>p[0])),Math.min(...ring.map(p=>p[1])),Math.max(...ring.map(p=>p[0])),Math.max(...ring.map(p=>p[1]))];for(let ix=Math.floor(box[0]/25);ix<=Math.floor(box[2]/25);ix++)for(let iz=Math.floor(box[1]/25);iz<=Math.floor(box[3]/25);iz++){const key=ix+','+iz;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(b)}}return cells}
 // Feeders are the low-voltage polylines that street-furniture actually rendered, after clearance checks.
-export function planHouseServices(buildings,feeders,world){
+export function planHouseServices(buildings,feeders,world){return finishSteps(planHouseServiceSteps(buildings,feeders,world))}
+// The same, a house per step, so the game can plan across frames (see createHouseServiceLines).
+export function* planHouseServiceSteps(buildings,feeders,world){
  const datum=world.meta?.originElevation||0,segments=new Map(),obstacles=buildingIndex(buildings),result=[],unique=new Map();
  for(const b of buildings)if(!unique.has(b.id))unique.set(b.id,b);
  for(const feeder of feeders){if(feeder.supply!=='overhead')continue;for(let i=1;i<feeder.points.length;i++){const a=feeder.points[i-1],b=feeder.points[i],segment={a,b,feeder};for(let ix=Math.floor((Math.min(a[0],b[0])-8)/16);ix<=Math.floor((Math.max(a[0],b[0])+8)/16);ix++)for(let iz=Math.floor((Math.min(a[2],b[2])-8)/16);iz<=Math.floor((Math.max(a[2],b[2])+8)/16);iz++){const key=ix+','+iz;if(!segments.has(key))segments.set(key,[]);segments.get(key).push(segment)}}}
@@ -36,19 +39,25 @@ export function planHouseServices(buildings,feeders,world){
    }
    if(okay){result.push({houseId:house.id,feederId:hit.feeder.id,distance:hit.distance,points});break}
   }
+  yield;
  }
  return result;
 }
 export function serviceLinePositions(drops){const positions=[];for(const drop of drops)for(const offset of [-.035,.035])for(let i=1;i<drop.points.length;i++){const a=drop.points[i-1],b=drop.points[i];positions.push(a[0],a[1]+offset,a[2],b[0],b[1]+offset,b[2])}return positions}
 export function createHouseServiceLines(scene,world,{material,getFeeders}){
- let mesh=null,next=0,lastSignature='',lastX=Infinity,lastZ=Infinity,drops=[];
+ let mesh=null,next=0,lastSignature='',lastX=Infinity,lastZ=Infinity,drops=[],job=null;
+ function pump(){const end=performance.now()+2;let r;while(!(r=job.next()).done)if(performance.now()>=end)return;job=null;show(r.value)}
+ function show(result){drops=result;const positions=serviceLinePositions(drops);
+  if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh=null}if(positions.length){const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.computeBoundingSphere();mesh=new T.LineSegments(geometry,material);mesh.name='House overhead service drops';mesh.userData.houseServiceLines=true;scene.add(mesh)}}
  const local=world.buildings||[];const localCells=buildingIndex(local);
  return {get drops(){return drops},update(camera,revision){
+  // Planning a dense suburb takes tens of milliseconds, so it runs a couple of milliseconds a frame and the old lines
+  // stay up until the new plan is ready.
+  if(job){pump();return}
   const now=performance.now();if(now<next)return;next=now+500;
   const feeders=getFeeders(),regional=world.region?.buildings||[],signature=revision+':'+feeders.map(f=>f.id).join(',')+':'+regional.map(b=>b.id).join(',');if(signature===lastSignature&&Math.hypot(camera.x-lastX,camera.z-lastZ)<30)return;lastSignature=signature;lastX=camera.x;lastZ=camera.z;
   const nearby=new Map();for(let ix=Math.floor((camera.x-700)/25);ix<=Math.floor((camera.x+700)/25);ix++)for(let iz=Math.floor((camera.z-700)/25);iz<=Math.floor((camera.z+700)/25);iz++)for(const b of localCells.get(ix+','+iz)||[])nearby.set(b.id,b);
   for(const b of regional){const p=b.rings?.[0]?.[0];if(p&&Math.hypot(p[0]-camera.x,p[1]-camera.z)<750&&!nearby.has(b.id))nearby.set(b.id,b)}
-  drops=planHouseServices([...nearby.values()],feeders,world);const positions=serviceLinePositions(drops);
-  if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh=null}if(positions.length){const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));geometry.computeBoundingSphere();mesh=new T.LineSegments(geometry,material);mesh.name='House overhead service drops';mesh.userData.houseServiceLines=true;scene.add(mesh)}
- },dispose(){if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh=null}drops=[]}};
+  job=planHouseServiceSteps([...nearby.values()],feeders,world);pump();
+ },get planning(){return !!job},dispose(){job=null;if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh=null}drops=[]}};
 }

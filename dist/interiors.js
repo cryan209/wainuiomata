@@ -1,4 +1,4 @@
-import {buildHouse,selectHouseEntrances,houseStyles} from './house-interiors.js?v=house-interiors-95';
+import {buildHouse,selectHouseEntrances,houseStyles} from './house-interiors.js?v=release-1';
 import * as T from './vendor/three.js';
 import {buildSupermarket,matchSupermarket} from './supermarket.js';
 import {supermarketSites} from './supermarket-sites.js';

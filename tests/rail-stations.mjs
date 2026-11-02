@@ -57,7 +57,7 @@ const paved=canopyScene.children.find(o=>o.userData.surface==='waterloo-concours
 
 // Load the actual regional renderer with Waterloo as its only building. This
 // catches the original closed-box collision and its distant instanced proxy.
-const scene=new T.Scene(),far=new Float32Array([-1871.704,-5400.358,building.ground-source.meta.originElevation,building.height,180.651,57.832,0,0]),textures={walls:Array(64).fill(null),windowMasks:Array(64).fill(null),metal:null,concrete:null};
+const scene=new T.Scene(),far=new Float32Array([-1871.704,-5400.358,building.ground-source.meta.originElevation,building.height,180.651,57.832,0,0]),textures={facades:{material:()=>new T.MeshLambertMaterial()},houseDetails:{material:()=>new T.MeshLambertMaterial()},sideDetails:{material:()=>new T.MeshLambertMaterial()},metal:null,concrete:null};
 const region=createRegionStream(scene,{chunks:[{id:'-4,-11',file:'waterloo-fixture',count:1,x:-1792,z:-5376}]},far,{ground:network.ground,datum:source.meta.originElevation,textures,streets:{closest:()=>null},network,coast:{meta:{bounds:{minX:-2048,maxX:-1536,minZ:-5632,maxZ:-5120}},density:()=>0,isLand:()=>true},openSpaces:{allows:()=>true},foliage:{mesh(){throw Error('Unexpected planting');}},windowMaterials:[],photoMaterials:[],freeLocal:()=>true,railways:{...source.railways,clear:()=>false},hydro});
 const farBody=scene.children[0].children[0],matrix=new T.Matrix4(),position=new T.Vector3(),rotation=new T.Quaternion(),scale=new T.Vector3();farBody.getMatrixAt(0,matrix);matrix.decompose(position,rotation,scale);assert.ok(Math.abs(scale.y-.3)<.001,'Distant Waterloo is a roof plate, not a solid box');
 const savedFetch=globalThis.fetch;globalThis.fetch=async()=>({ok:true,json:async()=>({buildings:[structuredClone(building)]})});

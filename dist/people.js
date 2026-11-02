@@ -17,18 +17,18 @@ function torsoGeometry(rings,around=20){
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(index);g.computeVertexNormals();return g;
 }
 // Tapered limb with domed ends and a muscle swell nearer the proximal (-y) joint.
-function limbGeometry(){
+function limbGeometry(around=12){
  const profile=[[0,-.5],[.5,-.493],[.78,-.47]];for(let i=0;i<=8;i++){const t=.04+i/8*.92;profile.push([.6+.25*(1-t)+.17*Math.sin(Math.PI*Math.min(1,t/.75)),t-.5])}profile.push([.42,.488],[0,.5]);
- return new T.LatheGeometry(profile.map(([r,y])=>new T.Vector2(r*.088,y)),12);
+ return new T.LatheGeometry(profile.map(([r,y])=>new T.Vector2(r*.088,y)),around);
 }
-function roundedBox(radius=.38){
- const g=new T.BoxGeometry(2,2,2,5,5,5),p=g.attributes.position,n=g.attributes.normal,v=new T.Vector3(),inner=new T.Vector3();
+function roundedBox(radius=.38,segments=5){
+ const g=new T.BoxGeometry(2,2,2,segments,segments,segments),p=g.attributes.position,n=g.attributes.normal,v=new T.Vector3(),inner=new T.Vector3();
  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);inner.set(...v.toArray().map(c=>T.MathUtils.clamp(c,radius-1,1-radius)));v.sub(inner).normalize();n.setXYZ(i,v.x,v.y,v.z);v.multiplyScalar(radius).add(inner);p.setXYZ(i,v.x,v.y,v.z)}
  return g;
 }
 // Sculpted head in metres: narrowing jaw, nose, brow, eye sockets, chin and ears. The seam sits at the back.
-function headGeometry(){
- const g=new T.SphereGeometry(1,28,20,Math.PI/2),p=g.attributes.position,bump=(a,b,ax,ay)=>Math.exp(-(a*a)/ax-(b*b)/ay);
+function headGeometry(around=28,rings=20){
+ const g=new T.SphereGeometry(1,around,rings,Math.PI/2),p=g.attributes.position,bump=(a,b,ax,ay)=>Math.exp(-(a*a)/ax-(b*b)/ay);
  for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const front=Math.max(0,-z),low=Math.max(0,-y);
   let X=x*(1-.13*low*low),Y=y<-.6?-.6+(y+.6)*.55:y,Z=z>0?z*(1-.4*low*low):z*(1-.08*low*low);
   Z-=front*(.3*bump(x,y+.1,.008,.03)+.07*bump(x,y-.22,.25,.006)+.07*bump(x,y+.78,.04,.02)+.03*bump(x,y+.35,.3,.02));
@@ -87,15 +87,19 @@ function faceTexture(){return paint(512,256,(x,rnd)=>{
 })}
 
 export function createHumanRenderer(scene,capacity){
- const torso=torsoGeometry([[.90,.158,.1,.108],[.96,.152,.098,.104],[1.08,.165,.11,.106],[1.20,.19,.13,.116],[1.29,.205,.132,.118],[1.355,.212,.112,.108],[1.40,.19,.085,.085],[1.435,.12,.065,.065],[1.455,.06,.05,.05]]);
- const hair=new T.SphereGeometry(1,24,10,Math.PI/2,Math.PI*2,0,Math.PI*.45);hair.rotateX(.3);
- const shapes={torso,limbs:limbGeometry(),head:headGeometry(),skin:roundedBox(.45),hair,detail:roundedBox(),dark:roundedBox(.5)},maps={torso:shirtTexture(),limbs:clothTexture(),head:faceTexture(),hair:hairTexture()};
- const meshes={};for(const[k,g]of Object.entries(shapes)){const mesh=new T.InstancedMesh(g,new T.MeshStandardMaterial({color:'#ffffff',roughness:k==='head'||k==='skin'?.72:.92,map:maps[k]||null}),capacity*({torso:1,limbs:10,head:1,skin:2,hair:3,detail:12,dark:6}[k]));mesh.count=0;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.frustumCulled=false;mesh.name='People / '+k;scene.add(mesh);meshes[k]=mesh}
+ const rings=[[.90,.158,.1,.108],[.96,.152,.098,.104],[1.08,.165,.11,.106],[1.20,.19,.13,.116],[1.29,.205,.132,.118],[1.355,.212,.112,.108],[1.40,.19,.085,.085],[1.435,.12,.065,.065],[1.455,.06,.05,.05]];
+ const hairGeometry=(around,rows)=>new T.SphereGeometry(1,around,rows,Math.PI/2,Math.PI*2,0,Math.PI*.45).rotateX(.3);
+ const shapes={torso:torsoGeometry(rings),limbs:limbGeometry(),head:headGeometry(),skin:roundedBox(.45),hair:hairGeometry(24,10),detail:roundedBox(),dark:roundedBox(.5)},maps={torso:shirtTexture(),limbs:clothTexture(),head:faceTexture(),hair:hairTexture()};
+ // Distant figures (write with detailed=false) use about a fifth of the triangles and the same materials.
+ const farShapes={torso:torsoGeometry(rings,10),limbs:limbGeometry(6),head:headGeometry(12,8),skin:roundedBox(.45,2),hair:hairGeometry(10,4),detail:roundedBox(.38,2),dark:roundedBox(.5,2)};
+ const meshes={},farMeshes={},sets=[meshes,farMeshes];for(const[k,g]of Object.entries(shapes)){const material=new T.MeshStandardMaterial({color:'#ffffff',roughness:k==='head'||k==='skin'?.72:.92,map:maps[k]||null});for(const[set,geometry,suffix]of [[meshes,g,''],[farMeshes,farShapes[k],' far']]){const mesh=new T.InstancedMesh(geometry,material,capacity*({torso:1,limbs:10,head:1,skin:2,hair:3,detail:12,dark:6}[k]));mesh.count=0;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.frustumCulled=false;mesh.name='People / '+k+suffix;scene.add(mesh);set[k]=mesh}}
+ let target=meshes;
  const local=new T.Matrix4(),matrix=new T.Matrix4(),pos=new T.Vector3(),q=new T.Quaternion(),scale=new T.Vector3(),axis=new T.Vector3(0,1,0),delta=new T.Vector3();
- const put=(kind,root,p,s,c,rotation)=>{pos.set(...p);scale.set(...s);q.copy(rotation||identity);local.compose(pos,q,scale);matrix.multiplyMatrices(root,local);const mesh=meshes[kind],slot=mesh.count++;mesh.setMatrixAt(slot,matrix);mesh.setColorAt(slot,c)};
+ const put=(kind,root,p,s,c,rotation)=>{pos.set(...p);scale.set(...s);q.copy(rotation||identity);local.compose(pos,q,scale);matrix.multiplyMatrices(root,local);const mesh=target[kind],slot=mesh.count++;mesh.setMatrixAt(slot,matrix);mesh.setColorAt(slot,c)};
  const identity=new T.Quaternion(),shoe=new T.Color('#292c2d'),white=new T.Color('#e0dfd5');
- const bone=(kind,root,a,b,width,c)=>{pos.set(...a);delta.set(...b).sub(pos);const length=delta.length();pos.addScaledVector(delta,.5);q.setFromUnitVectors(axis,delta.multiplyScalar(1/(length||1)));scale.set(width,length+.05,width);local.compose(pos,q,scale);matrix.multiplyMatrices(root,local);const mesh=meshes[kind],slot=mesh.count++;mesh.setMatrixAt(slot,matrix);mesh.setColorAt(slot,c)};
- return{meshes,begin(){for(const m of Object.values(meshes))m.count=0},write(root,id,phase=0,walking=false,seated=null,detailed=true){
+ const bone=(kind,root,a,b,width,c)=>{pos.set(...a);delta.set(...b).sub(pos);const length=delta.length();pos.addScaledVector(delta,.5);q.setFromUnitVectors(axis,delta.multiplyScalar(1/(length||1)));scale.set(width,length+.05,width);local.compose(pos,q,scale);matrix.multiplyMatrices(root,local);const mesh=target[kind],slot=mesh.count++;mesh.setMatrixAt(slot,matrix);mesh.setColorAt(slot,c)};
+ return{meshes,begin(){for(const set of sets)for(const m of Object.values(set))m.count=0},write(root,id,phase=0,walking=false,seated=null,detailed=true){
+  target=detailed?meshes:farMeshes;
   const shirt=colour(clothes,id),skin=colour(skins,id*3),pants=colour(trousers,id),hair=colour(hairs,id);
   const build=[.91,1.02,1.13,.97,1.08][id%5],shortSleeves=id%3===0,legWidth=[1,1.10,1.18,.95,1.08][id%5];
   put('torso',root,[0,0,0],[build,1,1],shirt);
@@ -124,10 +128,12 @@ export function createHumanRenderer(scene,capacity){
    if(detailed){const shoulder=[side*.195*build,1.345,0],elbow=seated?[side*.23,1.10,seated.z*.45]:[side*(.235*build+.03),1.095,.23*Math.sin(-swing)-.025],hand=seated?[side*.14,seated.y,seated.z]:[side*(.235*build+.035),.86,.36*Math.sin(-swing)-.06];bone('limbs',root,shoulder,elbow,.86*build,shirt);bone('limbs',root,elbow,hand,shortSleeves?.6:.72,shortSleeves?skin:shirt);put('skin',root,[hand[0],hand[1]-.05,hand[2]],[.025,.054,.042],skin)}
   }
   if(detailed&&!seated&&id%5===0)put('dark',root,[0,1.20,.17],[.13,.17,.06],colour(clothes,id+2));
- },finish(){for(const m of Object.values(meshes)){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}},dispose(){for(const m of Object.values(meshes)){scene.remove(m);m.geometry.dispose();m.material.dispose()}}};
+ },finish(){for(const set of sets)for(const m of Object.values(set)){m.visible=m.count>0;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true}},dispose(){for(const set of sets)for(const m of Object.values(set)){scene.remove(m);m.geometry.dispose();m.material.dispose()}}};
 }
 
 export function createPeople(scene,world,traffic={cars:[]},{count=56}={}){
+ // detail scales the full-model and drawing distances; lower graphics tiers simplify walkers sooner.
+ let detail=1;
  let seed=27361;const random=()=>((seed=seed*16807%2147483647)-1)/2147483646;
  const cells=new Map(),people=[],network=world.network;
  // Index references once; validate only the paths near the player.
@@ -152,13 +158,13 @@ export function createPeople(scene,world,traffic={cars:[]},{count=56}={}){
   const nearby=new Map();for(const p of people){const key=Math.floor(p.position.x/3)+','+Math.floor(p.position.z/3);if(!nearby.has(key))nearby.set(key,[]);nearby.get(key).push(p)}
   const clearOfPeople=(next,p)=>{for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(const other of nearby.get((Math.floor(next.x/3)+dx)+','+(Math.floor(next.z/3)+dz))||[])if(other!==p&&Math.abs(other.position.y-next.y)<.8&&Math.hypot(other.position.x-next.x,other.position.z-next.z)<.68)return false;return true};
   for(const p of people){if(dt>0){p.walking=false;if(!p.evasion)for(const car of traffic.cars)if(car.controlled&&Math.abs(car.velocity||0)>.8&&car.position){const x=p.position.x-car.position.x,z=p.position.z-car.position.z,along=-x*Math.sin(car.yaw)-z*Math.cos(car.yaw),across=Math.abs(x*Math.cos(car.yaw)-z*Math.sin(car.yaw));if(along>0&&along<7&&across<car.model.width/2+.7&&Math.abs(p.position.y-car.position.y)<2)avoidVehicle(p,car)}if(p.evasion){const dx=p.evasion.x-p.position.x,dz=p.evasion.z-p.position.z,d=Math.hypot(dx,dz),step=Math.min(d,2.8*dt);p.position={...p.position,x:p.position.x+dx/Math.max(d,.001)*step,z:p.position.z+dz/Math.max(d,.001)*step,y:p.evasion.y,dx:dx/Math.max(d,.001),dz:dz/Math.max(d,.001)};p.walking=true;p.phase+=dt*12;if(d<.12){p.evasion=null;finishEvasion(p)}}else if(p.idle>0)p.idle-=dt;else{const t=p.t+p.direction*p.speed*dt/p.route.length;if(t<p.route.lo||t>p.route.hi){if(p.route.crossing)leaveCrossing(p);else{p.direction*=-1;p.idle=1+random()*3}}else{const next=sample(p.route,t,p.direction);if(safe(next,p.route)&&(!p.route.crossing||p.crossingCommitted||traffic.rules.pedestrianSafe(p.route.crossing))&&!closeToCar(next,.65)&&clearOfPeople(next,p)){p.t=t;p.position=next;p.phase+=p.speed*dt*6;p.walking=true;p.waiting=false;if(p.route.crossing)p.crossingCommitted=true}else{if(p.route.crossing){p.waiting=true;p.idle=0}else{p.direction*=-1;p.idle=.7+random()*1.5}}}}const target=Math.atan2(-p.position.dx*p.direction,-p.position.dz*p.direction),angle=Math.atan2(Math.sin(target-p.yaw),Math.cos(target-p.yaw));p.yaw+=angle*(1-Math.exp(-dt*7))}
-   const distance=Math.hypot(p.position.x-camera.x,p.position.z-camera.z);if(distance>230)continue;pos.set(p.position.x,p.position.y+.018+(p.walking?.010*Math.cos(p.phase*2):0),p.position.z);rotation.set(0,p.yaw,0);q.setFromEuler(rotation);scale.setScalar(p.size);root.compose(pos,q,scale);render.write(root,p.id,p.phase,p.walking,null,distance<80);
+   const distance=Math.hypot(p.position.x-camera.x,p.position.z-camera.z);if(distance>230*detail||world.visibility&&!world.visibility.instance(p,p.position.x,p.position.y,p.position.z,.5*p.size,1.9*p.size))continue;pos.set(p.position.x,p.position.y+.018+(p.walking?.010*Math.cos(p.phase*2):0),p.position.z);rotation.set(0,p.yaw,0);q.setFromEuler(rotation);scale.setScalar(p.size);root.compose(pos,q,scale);render.write(root,p.id,p.phase,p.walking,null,distance<80*detail*detail);
   }
   // Occupants use the same rig and the vehicle's current rendered transform.
-  for(const car of traffic.cars){const p=car.renderPosition||car.position,m=car.model;if(car.cockpitView||!p||!m||!car.fleetMatrix||(!car.controlled&&(car.parked||car.manualPark))||car.fleetDetail===0||Math.hypot(p.x-camera.x,p.z-camera.z)>110)continue;const commercial=m.bus||m.van,F=-m.length/2,[a,A,B]=m.cabin,floor=m.bus?.76:m.van?.53:m.ute?.55:.32,seatY=floor+(m.bus?.42:.22),seatZ=commercial?F+1.03:m.ute?(A+B)/2-.08:A+.53,driverX=m.bus?m.width*.31:m.width*.225,driverZ=seatZ+.04,driverScale=Math.min(.86,(m.roof-.07-seatY-.08)/.868),driverY=seatY+.08-.88*driverScale,dashZ=commercial?F+.32:a+.23;
-   root.makeTranslation(driverX,driverY,driverZ);root.scale(new T.Vector3(driverScale,driverScale,driverScale));root.premultiply(car.fleetMatrix);render.write(root,car.index+401,0,false,{y:(m.body+.11-driverY)/driverScale,z:(dashZ+.34-driverZ)/driverScale},true);
+  for(const car of traffic.cars){const p=car.renderPosition||car.position,m=car.model;if(car.cockpitView||!p||!m||!car.fleetMatrix||(!car.controlled&&(car.parked||car.manualPark))||car.fleetDetail===0||car.fleetHidden)continue;const distance=Math.hypot(p.x-camera.x,p.z-camera.z);if(distance>110*Math.max(.6,detail))continue;const commercial=m.bus||m.van,F=-m.length/2,[a,A,B]=m.cabin,floor=m.bus?.76:m.van?.53:m.ute?.55:.32,seatY=floor+(m.bus?.42:.22),seatZ=commercial?F+1.03:m.ute?(A+B)/2-.08:A+.53,driverX=m.bus?m.width*.31:m.width*.225,driverZ=seatZ+.04,driverScale=Math.min(.86,(m.roof-.07-seatY-.08)/.868),driverY=seatY+.08-.88*driverScale,dashZ=commercial?F+.32:a+.23;
+   root.makeTranslation(driverX,driverY,driverZ);root.scale(new T.Vector3(driverScale,driverScale,driverScale));root.premultiply(car.fleetMatrix);render.write(root,car.index+401,0,false,{y:(m.body+.11-driverY)/driverScale,z:(dashZ+.34-driverZ)/driverScale},distance<80*detail*detail);
   }
   render.finish();
  }
- return{people,update,avoidVehicle,get stats(){return{walkers:people.length,draws:Object.values(render.meshes).filter(m=>m.count).length}},dispose:render.dispose};
+ return{people,update,avoidVehicle,setDetail(k){detail=k},get stats(){return{walkers:people.length,draws:Object.values(render.meshes).filter(m=>m.count).length}},dispose:render.dispose};
 }

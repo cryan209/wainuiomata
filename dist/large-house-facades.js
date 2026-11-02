@@ -1,5 +1,7 @@
 import * as T from './vendor/three.js';
 import {hash} from './appearance.js?v=large-houses-94';
+import {mergeFacadeBatches} from './facade-array.js?v=paced-1';
+import {splitMeshByCell,smallDetail} from './spatial-split.js?v=paced-1';
 export function planLargeHouseOpenings(b,{ground,datum}){
  if(!b.profile?.largeHouse||b.profile.shop||b.profile.industrial||b.railCanopy||!b.faces)return [];
  const base=b.ground-datum,height=b.eave-b.ground,stories=Math.max(1,Math.round(height/3.1)),story=height/stories,front=b.faces.filter(f=>f.front&&f.length>=4).sort((a,b)=>b.length-a.length||a.id-b.id)[0],result=[];
@@ -39,11 +41,9 @@ export function addLargeHouseFacades(scene,buildings,{ground,datum,textures,wind
    const centerGround=ground((f.a[0]+f.b[0])/2,(f.a[1]+f.b[1])/2);if(Math.abs(centerGround-base)<.25)quad(trim,f,f.length/2,base+.015,f.length,.20,.023,[.39,.41,.37]);
   }
  }
- function mesh(batch,material){if(!batch.p.length)return;const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(batch.p,3));if(batch.uv)g.setAttribute('uv',new T.Float32BufferAttribute(batch.uv,2));if(batch.c)g.setAttribute('color',new T.Float32BufferAttribute(batch.c,3));g.computeVertexNormals();const m=new T.Mesh(g,material);m.name='Large house facade details';scene.add(m)}
- for(let i=0;i<8;i++){
-  if(windows[i].p.length){const m=new T.MeshLambertMaterial({map:textures.houseWindows[i],color:'#e0e2dc',emissive:'#ffd7ab',emissiveMap:textures.houseWindowMasks[i],emissiveIntensity:0,side:T.DoubleSide});m.userData.nightBrightness=.75;windowMaterials.push(m);mesh(windows[i],m)}
-  if(doors[i].p.length)mesh(doors[i],new T.MeshLambertMaterial({map:textures.houseDoors[i],color:'#dbddd7',side:T.DoubleSide}));
- }
- if(trim.p.length)mesh(trim,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));
+ // Joinery photos share textures.houseDetails (windows then doors, already in windowMaterials); both batches split by area.
+ function add(g,material){if(!g)return;const m=new T.Mesh(g,material);m.name='Large house facade details';for(const part of smallDetail(splitMeshByCell(m,600)))scene.add(part)}
+ const joinery=mergeFacadeBatches([...windows,...doors]);if(joinery)add(joinery,textures.houseDetails.material());
+ if(trim.p.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(trim.p,3));g.setAttribute('color',new T.Float32BufferAttribute(trim.c,3));g.computeVertexNormals();add(g,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}))}
  return {count};
 }

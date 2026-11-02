@@ -18,7 +18,7 @@ export function buildGameRoads({streetGrades=null}={}){
  const map={...regionalMap,controls:controls.nodes,seaLevel:-meta.originElevation,elements:[...new Map([...localMap.elements,...regionalMap.elements].map(r=>[r.id,r])).values()]};
  const waterways=[...new Map([...json('waterways.json'),...json('regional-waterways.json')].map(r=>[r.id,r])).values()];
  const datum=meta.originElevation,scene=new T.Scene(),surveyGround=createSurveyGround({meta,coarse:int32('terrain.bin'),fine:int32('terrain-fine.bin'),regional,regionalMeta});
- const railways=createRailways(scene,json('railways.json'),{datum,textures:{roadSurfaces:Array(6).fill(null),concrete:null}}),rawGround=(x,z)=>railways.ground(x,z,surveyGround(x,z));
+ const railways=createRailways(scene,json('railways.json'),{datum,textures:{roadSurfaces:Array(6).fill(null),concrete:null},ground:surveyGround}),rawGround=(x,z)=>railways.ground(x,z,surveyGround(x,z));
  // The sea level createCoast reports (dist/coast.js).
  const hydro=createHydrology(scene,waterways,rawGround,{seaLevel:-datum+.08});
  return createRoadNetwork(scene,map,hydro,rawGround,{asphalt:null,concrete:null},null,railways,{buildGeometry:false,streetGrades});
