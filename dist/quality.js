@@ -1,5 +1,5 @@
 import {setDetailRange} from './spatial-split.js?v=paced-1';
-import {setStreamBudgetScale} from './frame-budget.js?v=1';
+import {setStreamBudgetScale} from './frame-budget.js?v=stream-3';
 import {setPhotoDetail} from './texture-lod.js?v=2';
 // Graphics tiers, lowest first. scale: render resolution; far: view distance in metres (fog follows it);
 // vegetation: multiplier on forest, town tree and fence distances; terrain: [distance-band multiplier, nearest ground step in metres];

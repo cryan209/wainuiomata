@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {streamBudget} from './frame-budget.js?v=1';
+import {streamBudget} from './frame-budget.js?v=stream-3';
 import {splitMeshByCell} from './spatial-split.js?v=paced-1';
 export function terrainStep(distance){return distance<250?2:distance<900?8:distance<2000?25:100}
 export function* terrainGeometry({x,z,sizeX=400,sizeZ=400,step,ground,density=()=>0}){

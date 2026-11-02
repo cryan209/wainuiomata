@@ -1,7 +1,7 @@
 import {planUtilityScenery,renderUtilityScenery,utilityContains,utilityDestinations} from './utility-scenery.js?v=lazy-utilities-116';
-import {createHouseServiceLines} from './house-service-lines.js?v=low-end-1';
+import {createHouseServiceLines} from './house-service-lines.js?v=stream-3';
 import * as T from './vendor/three.js';
-import {streamBudget} from './frame-budget.js?v=1';
+import {streamBudget} from './frame-budget.js?v=stream-3';
 import {offsetRoadPoint} from './road-topology.js?v=smooth-junctions-25';
 import {nightLightUniforms,bakeNightLightMap,createLampCoronas} from './night-lights.js?v=night-walls-73';
 const urban=new Set(['residential','living_street','unclassified','tertiary','secondary','primary','secondary_link','tertiary_link','primary_link','service']);
@@ -88,7 +88,8 @@ export function createStreetFurniture(scene,world){
    }
    for(const sign of p.signs||[])for(const offset of [-.065,.065])part('box',[p.x,p.y+sign.height+offset,p.z],[.32,.026,.27],'#8b9490',yaw);
    if(p.lamp){const base=at(0,7.12),bend=at(-.45,7.56),tip=at(-1.65,7.70);beam(base,bend,.045,'#8b9692');beam(bend,tip,.045,'#8b9692');part('sphere',tip,[.18,.105,.36],'#7f8d88',yaw);part('sphere',[tip[0],tip[1]-.085,tip[2]],[.145,.028,.28],'#ffffff',yaw,glass);glows.push(tip[0],tip[1]-.10,tip[2]);lamps.push({x:tip[0],y:tip[1]-.13,z:tip[2],floor:p.y});
-    const radius=4.2,N=6;for(let iz=0;iz<N;iz++)for(let ix=0;ix<N;ix++)for(const [u,w]of [[ix,iz],[ix+1,iz],[ix+1,iz+1],[ix,iz],[ix+1,iz+1],[ix,iz+1]]){const x=tip[0]+(u/N-.5)*radius*2,z=tip[2]+(w/N-.5)*radius*2,y=world.walkHeight(x,z,p.y+2)+.105;pools.push(x,y,z);poolUV.push(u/N,w/N)}
+    const radius=4.2,N=6,heights=[];for(let w=0;w<=N;w++)for(let u=0;u<=N;u++)heights.push(world.walkHeight(tip[0]+(u/N-.5)*radius*2,tip[2]+(w/N-.5)*radius*2,p.y+2)+.105);// grid corners are shared, so each is sampled once
+    for(let iz=0;iz<N;iz++)for(let ix=0;ix<N;ix++)for(const [u,w]of [[ix,iz],[ix+1,iz],[ix+1,iz+1],[ix,iz],[ix+1,iz+1],[ix,iz+1]]){pools.push(tip[0]+(u/N-.5)*radius*2,heights[w*(N+1)+u],tip[2]+(w/N-.5)*radius*2);poolUV.push(u/N,w/N)}
    }
    yield;
   }

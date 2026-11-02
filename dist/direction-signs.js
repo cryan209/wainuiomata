@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {streetLabel} from './street-furniture.js?v=low-end-3';
+import {streetLabel} from './street-furniture.js?v=stream-4';
 // Green advance direction signs on arterial junction approaches. Mapped OSM destination tags win; otherwise each exit is
 // followed along the network to the suburb it leads into. Approaches with mapped turn:lanes get one column per lane.
 const major=new Set(['motorway','trunk','primary','secondary','tertiary','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link']);

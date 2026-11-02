@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {streamBudget} from './frame-budget.js?v=1';
+import {streamBudget} from './frame-budget.js?v=stream-3';
 import {weldVertices,releaseAfterUpload} from './spatial-split.js?v=paced-1';
 import {isWaterlooCanopy,isWaterlooFar,waterlooCanopyPlan,addWaterlooCanopy} from './station-canopies.js?v=waterloo-reference-104';
 import {regionalRoof,farRoofGeometry} from './regional-roofs.js?v=roof-profiles-56';

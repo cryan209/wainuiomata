@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {streamBudget} from './frame-budget.js?v=1';
+import {streamBudget} from './frame-budget.js?v=stream-3';
 import {facadeProfile,hash} from './appearance.js';
 // Suggested yard envelopes derived from building footprints, not surveyed legal parcels.
 export function propertyFencePlan(building,network){

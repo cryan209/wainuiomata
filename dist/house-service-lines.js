@@ -1,5 +1,5 @@
 import * as T from './vendor/three.js';
-import {streamBudget} from './frame-budget.js?v=1';
+import {streamBudget} from './frame-budget.js?v=stream-3';
 import {finishSteps} from './spatial-split.js?v=paced-1';
 export const MAX_HOUSE_SERVICE_DISTANCE=8;
 const clamp=t=>Math.max(0,Math.min(1,t));
