@@ -11,7 +11,7 @@ import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js?v=release-1';
 import {createBusService} from './bus-service.js?v=crowd-1';
 import {createWaterWorld} from './water-world.js?v=regional-tunnels-101';
-import {loadWorld} from './geoworld.js?v=prebake-1';
+import {loadWorld} from './geoworld.js?v=photo-lod-2';
 import {createSound} from './sound.js?v=radio-ads-2';
 import {createFarCull} from './far-cull.js?v=far-cull-1';
 import {createOcclusion} from './occlusion.js?v=occlusion-3';
@@ -33,7 +33,8 @@ import {createBicycle} from './bicycle.js?v=bike-3';
 import {createMotorbike} from './motorbike.js?v=moto-1';
 import {createWeather} from './weather.js?v=shadow-quality-1';
 import {updateDetailRange} from './spatial-split.js?v=paced-1';
-import {createQuality} from './quality.js?v=crowd-1';
+import {createQuality,startingTier,TIERS} from './quality.js?v=photo-lod-2';
+import {setPhotoDetail} from './texture-lod.js?v=2';
 const $=s=>document.querySelector(s), scene=new T.Scene();scene.background=new T.Color('#92c8e9');
 // The world root never moves. Left on auto it would rebuild its matrix each frame, which forces every one of the
 // thousands of objects under it to recompute its world matrix too.
@@ -42,6 +43,7 @@ const renderer=new T.WebGLRenderer({antialias:false});renderer.setPixelRatio(1);
 let renderScale=1;const camera=new T.PerspectiveCamera(50,innerWidth/innerHeight,.15,30000);camera.rotation.order='YXZ';const farCull=createFarCull(scene,camera),occlusion=createOcclusion(renderer,scene,camera);const resize=()=>{renderer.setSize(Math.floor(innerWidth*renderScale),Math.floor(innerHeight*renderScale),false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};addEventListener('resize',resize);resize();const ambient=new T.HemisphereLight('#e2f1ff','#a5b5aa',1.85);scene.add(ambient);const sun=new T.DirectionalLight('#fff9ee',2.1);sun.position.set(-180,230,100);scene.add(sun);
 $('#play').disabled=true;$('#play').textContent='LOADING THE VALLEY…';
 let world;
+setPhotoDetail(TIERS[startingTier(renderer)].photos);
 try{world=await loadWorld(scene)}catch(e){$('#play').textContent='COULD NOT LOAD — REFRESH TO RETRY';$('#toast').textContent=e.message;$('#toast').style.opacity=1;throw e}
 await globalThis.loadingStage?.('Traffic, people and vehicles');
 world.visibility=occlusion;const {ground,roads,nearest,free}=world;world.water=createWaterWorld(scene,world);const furniture=createStreetFurniture(scene,world),staticFree=world.free,staticSpace=world.freeSpace;world.freeSpace=(x,z,...args)=>staticSpace(x,z,...args)&&furniture.free(x,z);world.free=(x,z,...args)=>staticFree(x,z,...args)&&furniture.free(x,z);world.furniture=furniture;const traffic=createTraffic(scene,world.network,144,{parkingClear:furniture.parkingClear,physicsWorld:world,viewDirection:()=>camera.getWorldDirection(new T.Vector3())});world.traffic=traffic;const intersections=createIntersectionScenery(scene,world.network,traffic.rules,{clear:(x,z,y)=>staticFree(x,z,y)&&furniture.free(x,z,false)});world.intersections=intersections;world.signImpact=(car,from,to)=>intersections.impact(car,from,to);const beforeControlsFree=world.free,beforeControlsSpace=world.freeSpace;world.free=(x,z,...args)=>beforeControlsFree(x,z,...args)&&intersections.free(x,z,args[0]);world.freeSpace=(x,z,...args)=>beforeControlsSpace(x,z,...args)&&intersections.free(x,z,args[0]);const directionSigns=createDirectionSigns(scene,world.network,traffic,world.places||[],{clear:(x,z,y)=>world.free(x,z,y)&&furniture.free(x,z,false),avoid:intersections.plans});world.directionSigns=directionSigns;const beforeDirectionsFree=world.free,beforeDirectionsSpace=world.freeSpace;world.free=(x,z,...args)=>beforeDirectionsFree(x,z,...args)&&directionSigns.free(x,z,args[0]);world.freeSpace=(x,z,...args)=>beforeDirectionsSpace(x,z,...args)&&directionSigns.free(x,z,args[0]);const people=createPeople(scene,world,traffic);world.people=people;const queen=roads.find(r=>r.name==='Queen Street');const start=queen.p[0].clone();

@@ -1,16 +1,17 @@
 import {setDetailRange} from './spatial-split.js?v=paced-1';
 import {setStreamBudgetScale} from './frame-budget.js?v=1';
+import {setPhotoDetail} from './texture-lod.js?v=2';
 // Graphics tiers, lowest first. scale: render resolution; far: view distance in metres (fog follows it);
 // vegetation: multiplier on forest, town tree and fence distances; terrain: [distance-band multiplier, nearest ground step in metres];
 // detailRange: metres beyond which small facade details (joinery, side windows) are hidden; stream: multiplier on the
 // milliseconds per frame that scenery builders may spend; crowd: share of the usual
-// moving cars and walkers kept around the player; shadowLevel: the shadow quality Auto picks. Shadows re-render every caster several times a second,
+// moving cars and walkers kept around the player; photos: which copy of the aerial and overview photographs to load ('quarter', 'half' or 'full' resolution); shadowLevel: the shadow quality Auto picks. Shadows re-render every caster several times a second,
 // so they are the first thing a weak GPU loses.
 export const TIERS=[
- {id:'low',label:'Low · 50% resolution, no shadows, 2 km view, half traffic',scale:.5,shadows:false,far:2000,vegetation:.45,terrain:[.3,5],detailRange:400,stream:.4,crowd:.5},
- {id:'reduced',label:'Reduced · 65% resolution, no shadows, 6 km view, lighter traffic',scale:.65,shadows:false,far:6000,vegetation:.65,terrain:[.75,2],detailRange:900,stream:.6,crowd:.75},
- {id:'balanced',shadowLevel:'low',label:'Balanced · 75% resolution, 12 km view',scale:.75,shadows:true,far:12000,vegetation:.85,terrain:[1,2],detailRange:Infinity,stream:.85,crowd:1},
- {id:'quality',shadowLevel:'medium',label:'Quality · native resolution, full view',scale:1,shadows:true,far:30000,vegetation:1,terrain:[1,2],detailRange:Infinity,stream:1,crowd:1},
+ {id:'low',label:'Low · 50% resolution, no shadows, 2 km view, half traffic, quarter-resolution photos',scale:.5,shadows:false,far:2000,vegetation:.45,terrain:[.3,5],detailRange:400,stream:.4,crowd:.5,photos:'quarter'},
+ {id:'reduced',label:'Reduced · 65% resolution, no shadows, 6 km view, lighter traffic, half-resolution photos',scale:.65,shadows:false,far:6000,vegetation:.65,terrain:[.75,2],detailRange:900,stream:.6,crowd:.75,photos:'half'},
+ {id:'balanced',shadowLevel:'low',label:'Balanced · 75% resolution, 12 km view',scale:.75,shadows:true,far:12000,vegetation:.85,terrain:[1,2],detailRange:Infinity,stream:.85,crowd:1,photos:'full'},
+ {id:'quality',shadowLevel:'medium',label:'Quality · native resolution, full view',scale:1,shadows:true,far:30000,vegetation:1,terrain:[1,2],detailRange:Infinity,stream:1,crowd:1,photos:'full'},
 ];
 const CHOICE_KEY='wainui-graphics',AUTO_KEY='wainui-graphics-auto',SHADOW_KEY='wainui-shadow-quality';
 const load=key=>{try{return localStorage.getItem(key)}catch{return null}},save=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
@@ -24,16 +25,20 @@ function guessTier(renderer){
  return 2;
 }
 
+// The tier play starts on: a fixed choice, else the tier Auto last settled on, else a guess. The world loads its photos
+// for this tier, so it is known before the renderer has drawn anything.
+export function startingTier(renderer){const choice=load(CHOICE_KEY);if(choice!==null&&choice!=='auto'&&TIERS[Number(choice)])return Number(choice);const saved=load(AUTO_KEY);return saved!==null&&TIERS[saved]?Number(saved):guessTier(renderer)}
+
 // Auto mode measures frame rate in two-second windows. It steps down below 40 FPS and tries one step up after
 // six seconds at the refresh cap; a tier that fails twice is not retried. The settled tier is remembered.
 export function createQuality({renderer,camera,sky,vegetation=[],crowds=[],terrain,setScale,select,shadowToggle,shadowQuality,setShadowQuality}){
  let shadowChoice=load(SHADOW_KEY)||'auto';
- const saved=load(AUTO_KEY);let auto=true,tier=saved!==null&&TIERS[saved]?Number(saved):guessTier(renderer),shadowsOffByUs=false;
+ let auto=true,tier=startingTier(renderer),shadowsOffByUs=false;
  const failures=TIERS.map(()=>0);let elapsed=0,frames=0,settle=3,fastWindows=0;
  function apply(){
   const t=TIERS[tier];setScale(t.scale);camera.far=t.far;camera.updateProjectionMatrix();
   // The sky dome is 10 km across; shrink it inside the far plane so it is never clipped.
-  sky.scale.setScalar(Math.min(1,t.far*.9/10000));for(const v of vegetation)v?.setDetail?.(t.vegetation);terrain?.setDetail?.(...t.terrain,Math.min(5000,t.far+400));setStreamBudgetScale(t.stream);for(const c of crowds)c?.setDensity?.(t.crowd);setDetailRange(t.detailRange);setShadowQuality?.(shadowChoice==='auto'?t.shadowLevel||'low':shadowChoice);
+  sky.scale.setScalar(Math.min(1,t.far*.9/10000));for(const v of vegetation)v?.setDetail?.(t.vegetation);terrain?.setDetail?.(...t.terrain,Math.min(5000,t.far+400));setStreamBudgetScale(t.stream);for(const c of crowds)c?.setDensity?.(t.crowd);setDetailRange(t.detailRange);setPhotoDetail(t.photos);setShadowQuality?.(shadowChoice==='auto'?t.shadowLevel||'low':shadowChoice);
   if(shadowToggle){
    if(!t.shadows&&shadowToggle.checked){shadowToggle.checked=false;shadowsOffByUs=true;shadowToggle.dispatchEvent(new Event('change'))}
    else if(t.shadows&&shadowsOffByUs&&!shadowToggle.checked){shadowToggle.checked=true;shadowsOffByUs=false;shadowToggle.dispatchEvent(new Event('change'))}
@@ -43,7 +48,7 @@ export function createQuality({renderer,camera,sky,vegetation=[],crowds=[],terra
  function set(next){next=Math.max(0,Math.min(TIERS.length-1,next));if(next===tier)return;tier=next;if(auto)save(AUTO_KEY,String(tier));apply()}
  if(select){
   select.innerHTML='<option value="auto">Auto · adjusts to keep the frame rate up</option>'+TIERS.map((t,i)=>`<option value="${i}">${t.label}</option>`).join('');
-  const choice=load(CHOICE_KEY);if(choice!==null&&choice!=='auto'&&TIERS[Number(choice)]){auto=false;tier=Number(choice)}
+  const choice=load(CHOICE_KEY);if(choice!==null&&choice!=='auto'&&TIERS[Number(choice)])auto=false;
   select.value=auto?'auto':String(tier);
   select.onchange=()=>{save(CHOICE_KEY,select.value);auto=select.value==='auto';if(auto){failures.fill(0);elapsed=frames=fastWindows=0}else set(Number(select.value))};
  }

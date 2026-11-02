@@ -26,9 +26,10 @@ import {createRegionStream} from './region-stream.js?v=low-end-3';
 import {createRailways} from './railways.js?v=low-end-3';
 import {assembleRegionalMap} from './regional-map.js?v=regions-1';
 import {unpackTerrain,unpackFar} from './terrain-pack.js?v=runtime-packs-1';
+import {loadLodPhoto} from './texture-lod.js?v=2';
 import {createSurveyGround} from './world-ground.js?v=street-grades-1';
 const fetchAsset=url=>fetch(url,{cache:'no-cache'});
-const loadPhoto=url=>new T.TextureLoader().loadAsync(url);
+const loadPhoto=loadLodPhoto;
 const loadRegionalMap=async()=>{const index=await fetchAsset('./regional-map.json').then(r=>r.json());return assembleRegionalMap(index,await Promise.all(index.parts.map(p=>fetchAsset('./'+p.file).then(r=>r.json()))))};
 const read=async(url,type)=>{const r=await fetchAsset(url);if(!r.ok)throw Error(`Could not load ${url}`);return new type(await r.arrayBuffer())};
 export async function loadWorld(scene){
