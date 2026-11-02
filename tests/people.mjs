@@ -12,5 +12,6 @@ for(const p of crowd.people){assert.ok(Math.abs(p.position.x)>4.25,'People stay 
 for(let i=0;i<crowd.people.length;i++)for(let j=0;j<i;j++)assert.ok(Math.hypot(crowd.people[i].position.x-crowd.people[j].position.x,crowd.people[i].position.z-crowd.people[j].position.z)>=.67,'Walkers yield before overlapping');
 const paused=scene.children.map(m=>Array.from(m.instanceMatrix.array));crowd.update(0,camera);assert.deepEqual(scene.children.map(m=>Array.from(m.instanceMatrix.array)),paused,'Pause preserves poses');
 for(const mesh of scene.children){assert.ok([...mesh.instanceMatrix.array].every(Number.isFinite));assert.ok(mesh.count<=mesh.instanceMatrix.count)}
-crowd.update(.05,{x:10000,y:2,z:10000});assert.equal(crowd.people.length,0,'Distant pedestrians are released');assert.ok(scene.children.every(m=>m.count===0),'Distant occupants and walkers are culled');crowd.dispose();assert.equal(scene.children.length,0);
-console.log('PASS: safe footpath placement, walking, road/building/rail/car avoidance, frozen pause poses, seven instanced batches, occupants and distance culling.');
+crowd.update(.05,{x:10000,y:2,z:10000});assert.equal(crowd.people.length,0,'Distant pedestrians are released');assert.ok(scene.children.every(m=>m.count===0),'Distant occupants and walkers are culled');crowd.setDensity(.5);for(let i=0;i<60;i++)crowd.update(.05,camera);assert.ok(crowd.people.length>0&&crowd.people.length<=16,`Half density repopulates at most half the crowd (${crowd.people.length})`);
+crowd.dispose();assert.equal(scene.children.length,0);
+console.log('PASS: safe footpath placement, walking, road/building/rail/car avoidance, frozen pause poses, seven instanced batches, occupants, distance culling and tier density.');

@@ -1,6 +1,6 @@
 import * as T from './vendor/three.js';
 import {buildBusRoute,createBusJob,busRoadGraph} from './bus-route.js?v=bus-job-66';
-import {createHumanRenderer} from './people.js?v=occlusion-2';
+import {createHumanRenderer} from './people.js?v=crowd-1';
 export async function createBusService(scene,world,traffic,driving,hud){
  const response=await fetch('./bus-route.json',{cache:'no-cache'});if(!response.ok)throw Error('Bus route unavailable');const route=buildBusRoute(busRoadGraph(world.network),await response.json()),job=createBusJob(route),group=new T.Group();group.visible=false;scene.add(group);
  const blue=new T.MeshLambertMaterial({color:'#31596d'}),metal=new T.MeshLambertMaterial({color:'#a8b6b5'}),yellow=new T.MeshBasicMaterial({color:'#f5de67',transparent:true,opacity:.7,depthWrite:false,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-5}),target=new T.Mesh(new T.PlaneGeometry(3.1,12),yellow);target.rotation.x=-Math.PI/2;group.add(target);

@@ -6,10 +6,10 @@ import {createRadioTowers,towerDestinations} from './radio-towers.js?v=towers-89
 import {createDashboardRadio} from './dashboard-radio.js?v=stations-2';
 import {createRainDriving} from './rain-driving.js?v=radio-rain-88';
 import {createLookouts,lookoutDestinations} from './lookouts.js?v=radio-rain-88';
-import {createParks} from './parks.js?v=occlusion-2';
+import {createParks} from './parks.js?v=crowd-1';
 import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js?v=release-1';
-import {createBusService} from './bus-service.js?v=occlusion-2';
+import {createBusService} from './bus-service.js?v=crowd-1';
 import {createWaterWorld} from './water-world.js?v=regional-tunnels-101';
 import {loadWorld} from './geoworld.js?v=prebake-1';
 import {createSound} from './sound.js?v=radio-ads-2';
@@ -22,10 +22,10 @@ import {installNightVision} from './night-vision.js';
 import {createDriving} from './driving.js?v=road-recover-89';
 import {createSkidMarks} from './skid-marks.js?v=handbrake-79';
 import {createStreetFurniture} from './street-furniture.js?v=low-end-3';
-import {createPeople} from './people.js?v=occlusion-2';
+import {createPeople} from './people.js?v=crowd-1';
 import {createIntersectionScenery} from './intersection-scenery.js?v=speed-signs-2';
 import {createDirectionSigns} from './direction-signs.js?v=low-end-3';
-import {createTraffic} from './traffic.js?v=release-1';
+import {createTraffic} from './traffic.js?v=crowd-1';
 import {movePlayer,findLanding} from './movement.js?v=audio-music-58';
 import {regionalDestinations} from './regional-destinations.js?v=north-east-112';
 import {createHelicopter} from './helicopter.js?v=heli-3';
@@ -33,7 +33,7 @@ import {createBicycle} from './bicycle.js?v=bike-3';
 import {createMotorbike} from './motorbike.js?v=moto-1';
 import {createWeather} from './weather.js?v=shadow-quality-1';
 import {updateDetailRange} from './spatial-split.js?v=paced-1';
-import {createQuality} from './quality.js?v=low-end-1';
+import {createQuality} from './quality.js?v=crowd-1';
 const $=s=>document.querySelector(s), scene=new T.Scene();scene.background=new T.Color('#92c8e9');
 // The world root never moves. Left on auto it would rebuild its matrix each frame, which forces every one of the
 // thousands of objects under it to recompute its world matrix too.
@@ -59,7 +59,7 @@ world.free=(x,z,...args)=>parkFree(x,z,...args)&&parks.free(x,z,args[0])
 world.freeSpace=(x,z,...args)=>parkSpace(x,z,...args)&&parks.free(x,z,args[0])
 world.parks=parks;
 const weather=createWeather({scene,renderer,camera,sun,ambient,sky,world});
-const quality=createQuality({renderer,camera,sky,vegetation:[world.forest,world.greenery,world.fences,people,furniture],terrain:world.terrain,setScale:s=>{renderScale=s;resize()},select:$('#graphics'),shadowToggle:$('#shadows'),shadowQuality:$('#shadow-quality'),setShadowQuality:weather.setShadowQuality});
+const quality=createQuality({renderer,camera,sky,vegetation:[world.forest,world.greenery,world.fences,people,furniture],crowds:[traffic,people],terrain:world.terrain,setScale:s=>{renderScale=s;resize()},select:$('#graphics'),shadowToggle:$('#shadows'),shadowQuality:$('#shadow-quality'),setShadowQuality:weather.setShadowQuality});
 const perfHUD=createPerformanceHUD({renderer,world,quality,culling:{farCull,occlusion}});
 
 const markers=[];const names=['Queen Street','Wainuiomata Road','Fitzherbert Road','The Strand'];for(let i=0;i<names.length;i++){const r=roads.find(r=>r.name===names[i]);const p=r?r.p[Math.floor(r.p.length/2)].clone():start.clone().add(new T.Vector2((i-1)*100,-i*65));const m=new T.Mesh(new T.OctahedronGeometry(1.2),new T.MeshBasicMaterial({color:'#e4f49a',wireframe:true}));m.position.set(p.x,ground(p.x,p.y)+3,p.y);scene.add(m);markers.push({p,m,name:names[i],found:false})}

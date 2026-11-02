@@ -3,13 +3,14 @@ import {setStreamBudgetScale} from './frame-budget.js?v=1';
 // Graphics tiers, lowest first. scale: render resolution; far: view distance in metres (fog follows it);
 // vegetation: multiplier on forest, town tree and fence distances; terrain: [distance-band multiplier, nearest ground step in metres];
 // detailRange: metres beyond which small facade details (joinery, side windows) are hidden; stream: multiplier on the
-// milliseconds per frame that scenery builders may spend; shadowLevel: the shadow quality Auto picks. Shadows re-render every caster several times a second,
+// milliseconds per frame that scenery builders may spend; crowd: share of the usual
+// moving cars and walkers kept around the player; shadowLevel: the shadow quality Auto picks. Shadows re-render every caster several times a second,
 // so they are the first thing a weak GPU loses.
 export const TIERS=[
- {id:'low',label:'Low · 50% resolution, no shadows, 2 km view',scale:.5,shadows:false,far:2000,vegetation:.45,terrain:[.3,5],detailRange:400,stream:.4},
- {id:'reduced',label:'Reduced · 65% resolution, no shadows, 6 km view',scale:.65,shadows:false,far:6000,vegetation:.65,terrain:[.75,2],detailRange:900,stream:.6},
- {id:'balanced',shadowLevel:'low',label:'Balanced · 75% resolution, 12 km view',scale:.75,shadows:true,far:12000,vegetation:.85,terrain:[1,2],detailRange:Infinity,stream:.85},
- {id:'quality',shadowLevel:'medium',label:'Quality · native resolution, full view',scale:1,shadows:true,far:30000,vegetation:1,terrain:[1,2],detailRange:Infinity,stream:1},
+ {id:'low',label:'Low · 50% resolution, no shadows, 2 km view, half traffic',scale:.5,shadows:false,far:2000,vegetation:.45,terrain:[.3,5],detailRange:400,stream:.4,crowd:.5},
+ {id:'reduced',label:'Reduced · 65% resolution, no shadows, 6 km view, lighter traffic',scale:.65,shadows:false,far:6000,vegetation:.65,terrain:[.75,2],detailRange:900,stream:.6,crowd:.75},
+ {id:'balanced',shadowLevel:'low',label:'Balanced · 75% resolution, 12 km view',scale:.75,shadows:true,far:12000,vegetation:.85,terrain:[1,2],detailRange:Infinity,stream:.85,crowd:1},
+ {id:'quality',shadowLevel:'medium',label:'Quality · native resolution, full view',scale:1,shadows:true,far:30000,vegetation:1,terrain:[1,2],detailRange:Infinity,stream:1,crowd:1},
 ];
 const CHOICE_KEY='wainui-graphics',AUTO_KEY='wainui-graphics-auto',SHADOW_KEY='wainui-shadow-quality';
 const load=key=>{try{return localStorage.getItem(key)}catch{return null}},save=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
@@ -25,14 +26,14 @@ function guessTier(renderer){
 
 // Auto mode measures frame rate in two-second windows. It steps down below 40 FPS and tries one step up after
 // six seconds at the refresh cap; a tier that fails twice is not retried. The settled tier is remembered.
-export function createQuality({renderer,camera,sky,vegetation=[],terrain,setScale,select,shadowToggle,shadowQuality,setShadowQuality}){
+export function createQuality({renderer,camera,sky,vegetation=[],crowds=[],terrain,setScale,select,shadowToggle,shadowQuality,setShadowQuality}){
  let shadowChoice=load(SHADOW_KEY)||'auto';
  const saved=load(AUTO_KEY);let auto=true,tier=saved!==null&&TIERS[saved]?Number(saved):guessTier(renderer),shadowsOffByUs=false;
  const failures=TIERS.map(()=>0);let elapsed=0,frames=0,settle=3,fastWindows=0;
  function apply(){
   const t=TIERS[tier];setScale(t.scale);camera.far=t.far;camera.updateProjectionMatrix();
   // The sky dome is 10 km across; shrink it inside the far plane so it is never clipped.
-  sky.scale.setScalar(Math.min(1,t.far*.9/10000));for(const v of vegetation)v?.setDetail?.(t.vegetation);terrain?.setDetail?.(...t.terrain,Math.min(5000,t.far+400));setStreamBudgetScale(t.stream);setDetailRange(t.detailRange);setShadowQuality?.(shadowChoice==='auto'?t.shadowLevel||'low':shadowChoice);
+  sky.scale.setScalar(Math.min(1,t.far*.9/10000));for(const v of vegetation)v?.setDetail?.(t.vegetation);terrain?.setDetail?.(...t.terrain,Math.min(5000,t.far+400));setStreamBudgetScale(t.stream);for(const c of crowds)c?.setDensity?.(t.crowd);setDetailRange(t.detailRange);setShadowQuality?.(shadowChoice==='auto'?t.shadowLevel||'low':shadowChoice);
   if(shadowToggle){
    if(!t.shadows&&shadowToggle.checked){shadowToggle.checked=false;shadowsOffByUs=true;shadowToggle.dispatchEvent(new Event('change'))}
    else if(t.shadows&&shadowsOffByUs&&!shadowToggle.checked){shadowToggle.checked=true;shadowsOffByUs=false;shadowToggle.dispatchEvent(new Event('change'))}
