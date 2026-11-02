@@ -21,7 +21,7 @@ import {createStreetIndex,buildingFaces,wallStyle,wallTextureScale} from './buil
 import {addCanopies} from './canopies.js?v=low-end-3';
 import {addSideWindows} from './side-windows.js?v=paced-1';
 import {createRoofDetail} from './roof-detail.js?v=smooth-junctions-25';
-import {createCoast} from './coast.js?v=boats-81';
+import {createCoast} from './coast.js?v=coast-r8-1';
 import {createRegionStream} from './region-stream.js?v=low-end-3';
 import {createRailways} from './railways.js?v=low-end-3';
 import {assembleRegionalMap} from './regional-map.js?v=regions-1';

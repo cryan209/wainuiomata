@@ -1,10 +1,15 @@
 import * as T from './vendor/three.js';
 import {createBoats} from './boats.js?v=boats-1';
-export function sampleRegionalMask(pixels,width,height,bounds,x,z){const u=(x-bounds.minX)/(bounds.maxX-bounds.minX),v=(z-bounds.minZ)/(bounds.maxZ-bounds.minZ);if(u<0||v<0||u>1||v>1)return 0;const i=Math.min(width-1,Math.floor(u*width)),j=Math.min(height-1,Math.floor(v*height));return pixels[(j*width+i)*4]/255}
+export function sampleRegionalMask(pixels,width,height,bounds,x,z){const u=(x-bounds.minX)/(bounds.maxX-bounds.minX),v=(z-bounds.minZ)/(bounds.maxZ-bounds.minZ);if(u<0||v<0||u>1||v>1)return 0;const i=Math.min(width-1,Math.floor(u*width)),j=Math.min(height-1,Math.floor(v*height));return pixels[j*width+i]/255}
 export async function createCoast(scene,meta,forestBytes,{ground,datum}){
- const mask=await new T.TextureLoader().loadAsync('./'+meta.mask);mask.flipY=false;mask.minFilter=mask.magFilter=T.LinearFilter;
- const canvas=document.createElement('canvas');canvas.width=mask.image.width;canvas.height=mask.image.height;canvas.getContext('2d').drawImage(mask.image,0,0);const pixels=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data,b=meta.bounds,seaLevel=-datum+.08;
- function isLand(x,z){return sampleRegionalMask(pixels,canvas.width,canvas.height,b,x,z)>.5}
+ // The 7000×6300 greyscale mask is kept once, one byte per pixel: the land tests read it and the GPU gets it as a
+ // single-channel texture (44 MB rather than 176 MB as RGBA, on each side).
+ const image=await new T.ImageLoader().loadAsync('./'+meta.mask),width=image.width,height=image.height;
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(image,0,0);
+ const rgba=context.getImageData(0,0,width,height).data,pixels=new Uint8Array(width*height);for(let i=0;i<pixels.length;i++)pixels[i]=rgba[i*4];canvas.width=canvas.height=0;
+ const mask=new T.DataTexture(pixels,width,height,T.RedFormat,T.UnsignedByteType);mask.minFilter=mask.magFilter=T.LinearFilter;mask.unpackAlignment=1;mask.needsUpdate=true;
+ const b=meta.bounds,seaLevel=-datum+.08;
+ function isLand(x,z){return sampleRegionalMask(pixels,width,height,b,x,z)>.5}
  function density(x,z){const f=meta.forest,u=T.MathUtils.clamp((x-b.minX)/(b.maxX-b.minX)*(f.width-1),0,f.width-1.001),v=T.MathUtils.clamp((z-b.minZ)/(b.maxZ-b.minZ)*(f.height-1),0,f.height-1.001),i=Math.floor(u),j=Math.floor(v),dx=u-i,dz=v-j,k=j*f.width+i;return(forestBytes[k]*(1-dx)*(1-dz)+forestBytes[k+1]*dx*(1-dz)+forestBytes[k+f.width]*(1-dx)*dz+forestBytes[k+f.width+1]*dx*dz)/255}
  const time={value:0},day={value:1},chop={value:1},sunDirection=new T.Vector3(.4,.7,-.6).normalize(),bounds=new T.Vector4(b.minX,b.minZ,b.maxX-b.minX,b.maxZ-b.minZ);
  const waterMaterial=new T.ShaderMaterial({uniforms:{...T.UniformsUtils.clone(T.UniformsLib.fog),clock:time,daylight:day,chop,sunDirection:{value:sunDirection},coastMask:{value:mask},coastBounds:{value:bounds}},fog:true,side:T.DoubleSide,
