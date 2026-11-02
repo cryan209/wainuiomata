@@ -11,7 +11,7 @@ import * as T from './vendor/three.js';
 import {createInteriors} from './interiors.js?v=release-1';
 import {createBusService} from './bus-service.js?v=occlusion-2';
 import {createWaterWorld} from './water-world.js?v=regional-tunnels-101';
-import {loadWorld} from './geoworld.js?v=low-end-3';
+import {loadWorld} from './geoworld.js?v=prebake-1';
 import {createSound} from './sound.js?v=radio-ads-2';
 import {createFarCull} from './far-cull.js?v=far-cull-1';
 import {createOcclusion} from './occlusion.js?v=occlusion-3';

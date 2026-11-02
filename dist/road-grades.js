@@ -57,33 +57,47 @@ function solveStreetGrades(roads,hubs,sample,minimum){
   if(clearance.size){const base=Float64Array.from(heights),seeds=[];for(const[n,h]of clearance)if(h>heights[n]&&!locked[n]){heights[n]=h;seeds.push(n)}relax(heights,1,{sideways:false,costs:fade(1,base),seeds,locked})}}
  for(const{r,i,row}of entries)r.gradeProfiles[i]=Float64Array.from(row,n=>heights[n]);for(const hub of hubs)hub.height=heights[canonical.get(hub.group.id)];for(const r of roads)if(r.type!=='steps')r.profiles=null;return{nodes:total,raised:moved,graphBytes:head.byteLength+dest.byteLength+next.byteLength+cost.byteLength*2+lateral.byteLength+heights.byteLength*4,...streetLookup(sx,sz,sh,sl,Float64Array.from(sn,n=>heights[n]),cells)}}
 
-// Precomputed street grades (scripts/pack_street_grades.mjs): every street sample's graded height and every junction's height,
-// in centimetres (1.8MB gzipped), so the game skips profiling 4600km of streets and solving a two-million-node graph at startup.
-// Layout: 4-byte header length, a JSON header, then the sample heights (int32 differences, byte planes) and the hub heights (int32
-// byte planes, -2^31 for none). The header's layout hash names every street and its sample counts, so a pack for another map is ignored.
+// Precomputed grades (scripts/pack_street_grades.mjs): every street and trail sample's graded height and every junction's
+// height, in centimetres, so the game skips profiling 4600km of streets, solving a two-million-node graph and grading the
+// trails that startup placement touches. Layout: 4-byte header length, a JSON header, the street sample heights, the hub heights
+// (int32 byte planes, -2^31 for none), then the trail sample heights. Sample heights are differences from the previous sample as
+// zigzag varints: samples 2m apart rarely differ by 64cm, so most take one byte. Each section's layout hash names every road and
+// its sample counts, so a pack for another map is ignored; trails can be ignored on their own and are then graded as needed.
 const segmentSamples=(r,i)=>Math.max(1,Math.ceil(r.p[i].distanceTo(r.p[i+1])/2))+1;
-export function streetGradeLayout(streets,hubs){let h=2166136261,samples=0;const mix=v=>{for(const c of String(v))h=Math.imul(h^c.charCodeAt(0),16777619)};
- for(const r of streets){mix(r.id+':');for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;const n=segmentSamples(r,i);samples+=n;mix(n+',')}}mix('#'+hubs.length);return{layout:(h>>>0).toString(16),samples,hubs:hubs.length}}
+function gradeLayout(roads,suffix=''){let h=2166136261,samples=0;const mix=v=>{for(const c of String(v))h=Math.imul(h^c.charCodeAt(0),16777619)};
+ for(const r of roads){mix(r.id+':');for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;const n=segmentSamples(r,i);samples+=n;mix(n+',')}}mix(suffix);return{layout:(h>>>0).toString(16),samples}}
+export function streetGradeLayout(streets,hubs){return{...gradeLayout(streets,'#'+hubs.length),hubs:hubs.length}}
+const varints=values=>{const out=new Uint8Array(values.length*5);let n=0,last=0;for(let k=0;k<values.length;k++){const d=values[k]-last|0;last=values[k];let z=(d<<1^d>>31)>>>0;while(z>=128){out[n++]=z&127|128;z>>>=7}out[n++]=z}return out.slice(0,n)};
+const unvarint=(bytes,offset,count)=>{const out=new Int32Array(count);let p=offset,last=0;for(let k=0;k<count;k++){let z=0,shift=0,b;do{b=bytes[p++];z|=(b&127)<<shift;shift+=7}while(b&128);out[k]=last=last+(z>>>1^-(z&1))|0}return out};
+const profileCM=roads=>{const cm=[];for(const r of roads)for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;for(const h of r.gradeProfiles[i])cm.push(Math.round(h*100))}return Int32Array.from(cm)};
 const planes=(values,diff)=>{const n=values.length,out=new Uint8Array(n*4);let last=0;for(let k=0;k<n;k++){const v=diff?values[k]-last|0:values[k];last=values[k];out[k]=v&255;out[n+k]=v>>>8&255;out[2*n+k]=v>>>16&255;out[3*n+k]=v>>>24}return out};
 const unplane=(bytes,offset,n,diff)=>{const out=new Int32Array(n);let last=0;for(let k=0;k<n;k++){const v=bytes[offset+k]|bytes[offset+n+k]<<8|bytes[offset+2*n+k]<<16|bytes[offset+3*n+k]<<24;out[k]=last=diff?last+v|0:v}return out};
-export function packStreetGrades(streets,hubs){const layout=streetGradeLayout(streets,hubs),cm=new Int32Array(layout.samples);let k=0;
- for(const r of streets)for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;for(const h of r.gradeProfiles[i])cm[k++]=Math.round(h*100)}
- const hubCM=Int32Array.from(hubs,h=>Number.isFinite(h.height)?Math.round(h.height*100):-2147483648),header=new TextEncoder().encode(JSON.stringify({format:2,...layout})),body=[planes(cm,true),planes(hubCM,false)];
- const out=new Uint8Array(4+header.length+body[0].length+body[1].length);new DataView(out.buffer).setUint32(0,header.length,true);out.set(header,4);out.set(body[0],4+header.length);out.set(body[1],4+header.length+body[0].length);return out}
+// trails must all be graded (their gradeProfiles set) before packing.
+export function packStreetGrades(streets,hubs,trails=[]){const layout=streetGradeLayout(streets,hubs),hubCM=Int32Array.from(hubs,h=>Number.isFinite(h.height)?Math.round(h.height*100):-2147483648),body=[varints(profileCM(streets)),planes(hubCM,false),varints(profileCM(trails))];
+ const header=new TextEncoder().encode(JSON.stringify({format:3,...layout,streetBytes:body[0].length,trails:trails.length?gradeLayout(trails):null}));
+ const out=new Uint8Array(4+header.length+body.reduce((n,b)=>n+b.length,0));new DataView(out.buffer).setUint32(0,header.length,true);out.set(header,4);let at=4+header.length;for(const b of body){out.set(b,at);at+=b.length}return out}
 export function readStreetGradeHeader(bytes){const length=new DataView(bytes.buffer,bytes.byteOffset).getUint32(0,true);return JSON.parse(new TextDecoder().decode(bytes.subarray(4,4+length)))}
-export function streetGradesFit(bytes,streets,hubs){const header=readStreetGradeHeader(bytes),layout=streetGradeLayout(streets,hubs),fit=header.format===2&&header.layout===layout.layout&&header.samples===layout.samples&&header.hubs===layout.hubs;
+export function streetGradesFit(bytes,streets,hubs){const header=readStreetGradeHeader(bytes),layout=streetGradeLayout(streets,hubs),fit=header.format===3&&header.layout===layout.layout&&header.samples===layout.samples&&header.hubs===layout.hubs;
  if(!fit)console.warn('Precomputed street grades do not match this map; solving them instead (run scripts/pack_street_grades.mjs).');return fit}
-function applyStreetGrades(roads,hubs,bytes){const header=readStreetGradeHeader(bytes),offset=4+new DataView(bytes.buffer,bytes.byteOffset).getUint32(0,true),cm=unplane(bytes,offset,header.samples,true),hubCM=unplane(bytes,offset+header.samples*4,header.hubs,false);
+export function trailGradesFit(bytes,trails){const header=readStreetGradeHeader(bytes),layout=gradeLayout(trails),fit=header.format===3&&header.trails?.layout===layout.layout&&header.trails.samples===layout.samples;
+ if(!fit)console.warn('Precomputed trail grades do not match this map; grading trails as they are needed instead (run scripts/pack_street_grades.mjs).');return fit}
+function applyTrailGrades(trails,bytes){const header=readStreetGradeHeader(bytes),cm=unvarint(bytes,4+new DataView(bytes.buffer,bytes.byteOffset).getUint32(0,true)+header.streetBytes+header.hubs*4,header.trails.samples);let k=0;
+ for(const r of trails){r.gradeProfiles=[];for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;const values=new Float64Array(segmentSamples(r,i));for(let j=0;j<values.length;j++)values[j]=cm[k++]/100;r.gradeProfiles[i]=values}}return k}
+// The street height lookup (street, streetNear) only serves trail grading, so it is skipped when the trails are packed too.
+function applyStreetGrades(roads,hubs,bytes,lookup=true){const header=readStreetGradeHeader(bytes),offset=4+new DataView(bytes.buffer,bytes.byteOffset).getUint32(0,true),cm=unvarint(bytes,offset,header.samples),hubCM=unplane(bytes,offset+header.streetBytes,header.hubs,false);
  const spot={x:[],z:[],half:[],layer:[],h:[]};let k=0;
  for(const r of roads){r.gradeProfiles=[];const half=r.width/2+1,level=+(r.tags?.layer||0);for(let i=0;i<r.p.length-1;i++){if(r.sharedSegments.has(i))continue;const a=r.p[i],b=r.p[i+1],n=segmentSamples(r,i)-1,values=new Float64Array(n+1);
-  for(let j=0;j<=n;j++){values[j]=cm[k++]/100;if(r.bridge||r.tunnel)continue;spot.x.push(T.MathUtils.lerp(a.x,b.x,j/n));spot.z.push(T.MathUtils.lerp(a.y,b.y,j/n));spot.half.push(half);spot.layer.push(level);spot.h.push(values[j])}r.gradeProfiles[i]=values}}
+  for(let j=0;j<=n;j++){values[j]=cm[k++]/100;if(!lookup||r.bridge||r.tunnel)continue;spot.x.push(T.MathUtils.lerp(a.x,b.x,j/n));spot.z.push(T.MathUtils.lerp(a.y,b.y,j/n));spot.half.push(half);spot.layer.push(level);spot.h.push(values[j])}r.gradeProfiles[i]=values}}
  hubs.forEach((hub,i)=>{hub.height=hubCM[i]===-2147483648?undefined:hubCM[i]/100});
+ if(!lookup)return{nodes:0,raised:0,graphBytes:0,packed:true};
  const sx=Float64Array.from(spot.x),sz=Float64Array.from(spot.z);return{nodes:0,raised:0,graphBytes:0,packed:true,...streetLookup(sx,sz,Float64Array.from(spot.half),Int8Array.from(spot.layer),Float64Array.from(spot.h),spotCells(sx,sz))}}
 
 // Trails follow terrain and attach to streets. They cannot impose their hill grades on streets.
 // Sidewalks and cycleways running beside a street (within 3m of its pavement, under 4m apart vertically) are pulled onto its level instead of leaving a ledge.
-export function solveRoadGrades(roads,hubs,sample,minimum,ungraded=sample,packed=null){
- const streets=roads.filter(isStreet),trails=roads.filter(r=>path.has(r.type)),usePack=packed&&streetGradesFit(packed,streets,hubs),{street,streetNear,...stats}=usePack?applyStreetGrades(streets,hubs,packed):solveStreetGrades(streets,hubs,sample,minimum),anchors=new Map();
+// packedTrails (trailGradesFit) takes the trail grades from the pack too, so none are graded here or later.
+export function solveRoadGrades(roads,hubs,sample,minimum,ungraded=sample,packed=null,packedTrails=false){
+ const streets=roads.filter(isStreet),trails=roads.filter(r=>path.has(r.type)),usePack=packed&&streetGradesFit(packed,streets,hubs),{street,streetNear,...stats}=usePack?applyStreetGrades(streets,hubs,packed,!packedTrails):solveStreetGrades(streets,hubs,sample,minimum),anchors=new Map();
+ if(usePack&&packedTrails){const trailSamples=applyTrailGrades(trails,packed);return{...stats,trailSamples}}
  for(const r of streets)for(let i=0;i<r.p.length;i++){const p=r.p[i],segment=Math.min(i,r.p.length-2),t=i===r.p.length-1?1:0,h=ungraded(r,segment,t,p.x,p.y),id=key(p);anchors.set(id,Math.max(anchors.get(id)??-Infinity,h))}
  const streetNodes=new Set(anchors.keys());
  // Trails are graded one at a time, when a height on one is first needed. A shared trail node takes the highest
