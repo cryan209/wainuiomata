@@ -4,7 +4,7 @@ import * as T from './vendor/three.js';
 import {weldVertices,releaseAfterUpload} from './spatial-split.js?v=paced-1';
 import {waterlooPlatformView,waterlooCatenaryArea} from './waterloo-fixtures.js?v=waterloo-reference-104';
 import {createRailTerrainClip} from './rail-clearance.js?v=rail-stations-103';
-import {createTunnelScenery} from './tunnel-scenery.js?v=low-end-2';
+import {createTunnelScenery} from './tunnel-scenery.js?v=web-transitions-1';
 import {createLevelCrossings} from './level-crossings.js?v=level-crossings-1';
 export function railRoute(points,datum=0){const p=points.map(p=>new T.Vector3(p.x,p.h-datum,p.z)),distance=[0];for(let i=1;i<p.length;i++)distance.push(distance.at(-1)+p[i].distanceTo(p[i-1]));return{length:distance.at(-1),sample(s){s=T.MathUtils.clamp(s,0,distance.at(-1));let low=0,high=distance.length-1;while(low+1<high){const mid=(low+high)>>1;if(distance[mid]<=s)low=mid;else high=mid}const t=(s-distance[low])/(distance[high]-distance[low]||1),position=p[low].clone().lerp(p[high],t),direction=p[high].clone().sub(p[low]).normalize();return{position,direction}},nearest(x,z){let best={distance:Infinity,s:0};for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],dx=b.x-a.x,dz=b.z-a.z,t=T.MathUtils.clamp(((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1),0,1),d=Math.hypot(x-a.x-dx*t,z-a.z-dz*t);if(d<best.distance)best={distance:d,s:T.MathUtils.lerp(distance[i-1],distance[i],t)}}return best}}}
 export function createRailways(scene,data,{datum,textures,ground=null}){

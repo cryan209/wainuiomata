@@ -1,0 +1,29 @@
+import assert from 'node:assert/strict';
+import * as T from '../dist/vendor/three.js';
+import {createTerrainCutouts} from '../dist/terrain-cutouts.js';
+import {terrainGeometry} from '../dist/terrain-stream.js';
+import {createRoadNetwork} from '../dist/water-roads.js';
+import {createTraffic} from '../dist/traffic.js';
+import {createTrafficRules} from '../dist/traffic-rules.js';
+import {createPeople} from '../dist/people.js';
+import {CLASSICS} from '../dist/classic-cars.js';
+const finish=g=>{let r;do{r=g.next()}while(!r.done);return r.value};
+const area=g=>{let n=0;const p=g.attributes.position,v=i=>new T.Vector3().fromBufferAttribute(p,i),ix=g.index.array;for(let i=0;i<ix.length;i+=3)n+=v(ix[i+1]).sub(v(ix[i])).cross(v(ix[i+2]).sub(v(ix[i]))).length()/2;return n};
+const square=(y=0)=>{const g=new T.PlaneGeometry(64,64,1,1).rotateX(-Math.PI/2).translate(32,y,32);g.setAttribute('uv',new T.Float32BufferAttribute(Array.from({length:g.attributes.position.count},(_,i)=>[g.attributes.position.getX(i)/64,g.attributes.position.getZ(i)/64]).flat(),2));return g};
+const bore={a:{x:6,y:-1,z:7},b:{x:58,y:-1,z:7},half:1.5,height:5.5};
+let g=finish(createTerrainCutouts([bore]).carve(square()));assert.ok(Math.abs(area(g)-(4096-156))<.001,'Narrow bore cuts its actual footprint, not whole coarse triangles');
+assert.equal(g.attributes.normal.count,g.attributes.position.count);assert.equal(g.attributes.uv.count,g.attributes.position.count);
+for(let i=0;i<g.attributes.position.count;i++){assert.ok(Number.isFinite(g.attributes.normal.getY(i)));assert.ok(Math.abs(g.attributes.uv.getX(i)-g.attributes.position.getX(i)/64)<1e-6&&Math.abs(g.attributes.uv.getY(i)-g.attributes.position.getZ(i)/64)<1e-6,'Cut-edge UVs preserve their geographic mapping')}
+const once=area(g);g=finish(createTerrainCutouts([bore,{...bore,a:{x:32,y:-1,z:7}}]).carve(square()));assert.ok(Math.abs(area(g)-once)<.001,'Overlapping bores are subtracted as a union');
+assert.equal(area(finish(createTerrainCutouts([bore]).carve(square(12)))),4096,'Terrain above a bore stays intact');
+const many=Array.from({length:40},(_,i)=>({a:{x:2+i*1.5,y:-1,z:4},b:{x:2+i*1.5,y:-1,z:60},half:.3,height:6}));g=finish(createTerrainCutouts(many).carve(square()));assert.ok(Math.abs(area(g)-(4096-40*.6*56))<.02,'More than 24 overlapping camera-visible bore segments retain their cutouts');
+const skirt=new T.BufferGeometry();skirt.setAttribute('position',new T.Float32BufferAttribute([20,-6,0,20,8,0,20,-6,16,20,8,16],3));skirt.setAttribute('normal',new T.Float32BufferAttribute(Array(4).fill([1,0,0]).flat(),3));skirt.setIndex([0,1,2,1,3,2]);g=finish(createTerrainCutouts([bore]).carve(skirt));assert.ok(Math.abs(area(g)-(224-3*9.5))<.001,'Tile skirts do not seal a bore');
+const streamed=finish(terrainGeometry({x:0,z:0,sizeX:64,sizeZ:64,step:64,ground:()=>0,cutouts:createTerrainCutouts([bore])}));assert.ok(streamed.index.count>0&&streamed.attributes.color.count===streamed.attributes.position.count,'Streamed terrain retains colours and attributes');
+const point=(x,z,node)=>({x,z,node}),way=(id,geometry,tags={})=>({id,tags:{highway:'residential',width:'8',...tags},geometry});
+function fixture(controls=[]){const scene=new T.Scene(),network=createRoadNetwork(scene,{elements:[way(1,[point(0,80,'s'),point(0,0,'o'),point(0,-80,'n')]),way(2,[point(80,0,'e'),point(0,0,'o'),point(-80,0,'w')])],controls},{ground:()=>0,channel:()=>null},()=>0,{},null,null,{buildGeometry:false}),traffic=createTraffic(scene,network,0),rules=createTrafficRules(network,traffic.edges,traffic.nodes,()=>0);return{traffic,rules}}
+function car(f,from,index,stop=0){const edge=f.traffic.edges.find(e=>e.fromId===from&&e.toId==='o'),d={x:(edge.to.x-edge.from.x)/edge.length,z:(edge.to.y-edge.from.y)/edge.length},group=f.rules.junctions.get('o').group,remaining=group.radius+CLASSICS[0].length/2+.8+stop;return{index,model:CLASSICS[0],edge,distance:edge.length-remaining,position:{x:-d.x*remaining+d.z*1.84,z:-d.z*remaining-d.x*1.84,y:.16},velocity:0,speed:10}}
+let f=fixture(),south=car(f,'s',1),east=car(f,'e',2,8);east.velocity=6;for(let i=0;i<100;i++)f.rules.prepare([south,east],.1);assert.equal(south.trafficAllowed,false,'Waiting ten seconds never overrides moving traffic from the right');
+east.velocity=0;for(let i=0;i<50;i++)f.rules.prepare([south,east],.1);assert.ok(south.trafficAllowed||east.trafficAllowed,'Fully stopped equal-priority queues release deterministically');
+f=fixture([{id:'o',tags:{highway:'give_way',direction:'forward'}}]);south=car(f,'s',1);const crossing={x:0,z:0,y:.16,width:8};south.position={x:0,y:.16,z:-10};south.velocity=6;f.rules.prepare([south],.1);assert.equal(f.rules.pedestrianSafe(crossing),true,'Departing traffic does not block pedestrians');south.velocity=-6;assert.equal(f.rules.pedestrianSafe(crossing),false,'A reversing vehicle approaching the crossing blocks pedestrians');
+const a=new T.Vector2(0,0),b=new T.Vector2(0,20),c=new T.Vector2(20,20);a.node='a';b.node='b';c.node='c';const paths=[{id:'a',type:'footway',tags:{},p:[a,b],width:2,pavementWidth:2,sharedSegments:new Map()},{id:'b',type:'footway',tags:{},p:[b,c],width:2,pavementWidth:2,sharedSegments:new Map()}],network={roads:paths,height:()=>0,at:()=>null},crowd=createPeople(new T.Scene(),{network,free:()=>true},{cars:[]},{count:1});crowd.update(0,{x:0,y:2,z:20});const walker=crowd.people[0];walker.route={r:paths[0],i:0,length:20,side:0,path:true,offset:0,lo:0,hi:1};walker.t=.999;walker.direction=1;walker.position={x:.13,y:0,z:19.98,dx:0,dz:1};walker.idle=0;crowd.update(.05,{x:0,y:2,z:20});assert.equal(walker.route.r,paths[1],'Walker follows a connected mapped path instead of turning back');crowd.dispose();
+console.log('PASS: persistent right-hand priority, stopped-queue release, predictive pedestrian gaps, connected paths, exact/overlapping/unlimited bore clipping and tile skirts.');

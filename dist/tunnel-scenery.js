@@ -67,7 +67,7 @@ export function createTunnelScenery(scene,definitions){
   if(!portalCells){portalCells=new Map();for(const p of portals){portalReach=Math.max(portalReach,p.d.half+12);const key=Math.floor(p.p.x/100)+','+Math.floor(p.p.z/100);if(!portalCells.has(key))portalCells.set(key,[]);portalCells.get(key).push(p);}}
   const out=[];for(let ix=Math.floor((x-portalReach)/100);ix<=Math.floor((x+portalReach)/100);ix++)for(let iz=Math.floor((z-portalReach)/100);iz<=Math.floor((z+portalReach)/100);iz++)for(const p of portalCells.get(ix+','+iz)||[])out.push(p);return out;
  }
- return{definitions,portals,at,canMove,applyTerrain,update,clearPortal(x,z){return portalsNear(x,z).some(p=>Math.hypot(x-p.p.x,z-p.p.z)<p.d.half+12);},get stats(){return{tunnels:definitions.length,chunks:loaded.size};}};
+ return{definitions,portals,terrainCuts:definitions.filter(d=>d.rail).flatMap(d=>d.points.slice(1).map((b,i)=>({a:d.points[i],b,half:d.half+.15,height:d.height+.7}))),at,canMove,applyTerrain,update,clearPortal(x,z){return portalsNear(x,z).some(p=>Math.hypot(x-p.p.x,z-p.p.z)<p.d.half+12);},get stats(){return{tunnels:definitions.length,chunks:loaded.size};}};
 }
 
 export function namedRoadTunnels(scene,network){return createTunnelScenery(scene,network.roads.filter(r=>r.tunnel&&r.name&&!r.fullyShared&&r.length>40).map(r=>({id:r.id,name:r.name,rail:false,half:Math.max(.4,r.pavementWidth/2-.1),height:r.headroom-.16,ground:network.ground,points:r.p.map((p,i)=>({x:p.x,z:p.y,y:network.height(r,Math.min(i,r.p.length-2),i===r.p.length-1?1:0,p.x,p.y)}))})));}

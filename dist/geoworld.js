@@ -1,3 +1,4 @@
+import {createTerrainCutouts} from './terrain-cutouts.js?v=web-transitions-1';
 import {setCellSiteClearance} from './cell-site-clearance.js?v=cells-90';
 import * as T from './vendor/three.js';
 import {createPropertyFences} from './fences.js?v=stream-3';
@@ -5,11 +6,11 @@ import {applyRoadImagery} from './road-imagery.js?v=intersections-50';
 import {createGroundDetail} from './ground-detail.js?v=regional-ground-65';
 import {applyGroundImagery} from './ground-imagery.js?v=regional-ground-65';
 import {applyNightLight} from './night-lights.js?v=night-walls-73';
-import {createTerrainStream} from './terrain-stream.js?v=stream-3';
+import {createTerrainStream} from './terrain-stream.js?v=web-transitions-1';
 import {makeTextures} from './textures.js?v=large-houses-94';
-import {createHydrology,createRoadNetwork} from './water-roads.js?v=stream-3';
+import {createHydrology,createRoadNetwork} from './water-roads.js?v=web-transitions-1';
 import {facadeProfile,facadeStyle,FACADE_COUNT} from './appearance.js?v=large-houses-94';
-import {createTunnels} from './tunnels.js?v=perf-59';
+import {createTunnels} from './tunnels.js?v=web-transitions-1';
 import {addGreenery} from './greenery.js?v=static-1';
 import {forestSampler,addHillsideForest} from './forest.js?v=static-1';
 import {createFoliage} from './foliage.js?v=runtime-packs-113';
@@ -68,7 +69,8 @@ export async function loadWorld(scene){
  railways.setRoads(network.roads);
  const ground=(x,z)=>network.ground(x,z);
  await globalThis.loadingStage?.('Terrain');
- const terrain=createTerrainStream(scene,{bounds:regionalMeta,ground:(x,z)=>hydro.terrainGround(x,z,ground(x,z)),density:forestDensity,textures,materialHook:material=>{applyNightLight(material);tunnels?.applyTerrain(material);coast.applyTerrain(material);network.clipTerrain(material);railways.applyTerrain(material);applyGroundImagery(material,aerialLayers)}});
+ const terrainCuts=createTerrainCutouts([...network.terrainCuts,...railways.bores.terrainCuts,...(tunnels?.terrainCuts||[])]);
+ const terrain=createTerrainStream(scene,{cutouts:terrainCuts,bounds:regionalMeta,ground:(x,z)=>hydro.terrainGround(x,z,ground(x,z)),density:forestDensity,textures,materialHook:material=>{applyNightLight(material);tunnels?.applyTerrain(material);coast.applyTerrain(material);network.clipTerrain(material);railways.applyTerrain(material);applyGroundImagery(material,aerialLayers)}});
  await terrain.ensureAt(0,0);
  // Keep the surveyed meshes intact; vary only their surface appearance.
  const buildingCells=new Map();for(const b of buildings){const r=b.rings[0];b.paintBounds=[Math.min(...r.map(v=>v[0])),Math.min(...r.map(v=>v[1])),Math.max(...r.map(v=>v[0])),Math.max(...r.map(v=>v[1]))];b.profile=facadeProfile(b);b.faces=buildingFaces(b,streets);b.style=b.profile.style;for(let x=Math.floor(b.paintBounds[0]/30);x<=Math.floor(b.paintBounds[2]/30);x++)for(let z=Math.floor(b.paintBounds[1]/30);z<=Math.floor(b.paintBounds[3]/30);z++){const key=x+','+z;if(!buildingCells.has(key))buildingCells.set(key,[]);buildingCells.get(key).push(b)}}

@@ -652,3 +652,13 @@ The coarse regional DEM has no railway embankments, so bridge-tagged track over 
 147 mapped level crossings (87 road, 60 path) get rubber crossing panels. Road crossings get flashing lights with crossbucks, and electrified urban roads (or OSM `crossing:barrier`) also get half barrier arms. Lights start when a service train is about 25 s away or on the crossing, arms lower after 3 s, and traffic holds at the stop line while the lights flash. The equipment is a generic NZ-style approximation, not a survey of each site. Controls → Explore the region adds Silverstream · Field Street rail bridge and Wallaceville · Ward Street level crossing.
 
 Rebuild: after `scripts/prepare_railways.py` and the rail expansion scripts, run `python scripts/rail_grade_separation.py` (in place, idempotent; it calls `node scripts/lib/road_heights.mjs`), then `node scripts/pack_street_grades.mjs`, and repeat the pair once if road heights moved.
+
+## Web traffic and terrain transitions
+
+The web client now retains right-hand priority while conflicting traffic is moving, yields at stop/give-way approaches before entering the junction, checks approaching vehicles beyond the immediate stop queue, and only uses wait-time ordering to release fully stopped queues. Right turns also yield to opposing traffic. Roundabout traffic slows to about 22 km/h. Moving cars already inside a junction retain clearance to exit.
+
+Pedestrians continue along connected mapped footpaths on the same level, check a body-width footprint against obstacles, and use vehicle heading and speed to choose crossing gaps. Approaching and reversing vehicles hold crossings; departing traffic clears them. AI cars brake for pedestrian bodies as well as marked crossing requests.
+
+Streamed terrain and its tile skirts are cut against spatially indexed road and rail bore volumes. Cutting preserves neighbouring triangles, colours, normals and aerial UVs, handles overlapping bores, and covers more than the former 24 shader-selected segments. Mapped open road approaches are cut for up to 32 m outside portals. Terrain work remains incremental. Existing bridge and rail elevations are preserved; underlying source-profile clearance issues are not changed by this port.
+
+Run `node tests/web-transitions.mjs` for focused regressions alongside `intersection-rules`, `people`, `crossing-people`, `terrain-stream`, `traffic-map`, `traffic-density`, `movement-network`, `road-approaches`, `crossings-detail`, `long-tunnels`, `regional-tunnels` and `weather-railways` in `tests/`.
